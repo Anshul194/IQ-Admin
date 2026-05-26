@@ -15,7 +15,7 @@ import {
     Check, ClipboardList, Database, LayoutPanelLeft,
     MonitorPlay, ListChecks, FileText,
     ArrowUpRight, ExternalLink, Filter,
-    MoreHorizontal, Download, Share2
+    MoreHorizontal, Download, Share2, Calendar
 } from 'lucide-react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
@@ -74,52 +74,127 @@ const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
 };
 
 // --- Highlighted Action Row ---
-const CompactRow = ({ title, items, activeId, onSelect, onAdd, icon: Icon, labelKey, typeLabel }) => (
-    <div className="w-full space-y-6">
-        <div className="flex items-center justify-between px-1">
-            <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Icon size={14} /> {title}
-                </h4>
-                <p className="text-[10px] font-medium text-slate-300 mt-1 uppercase tracking-tight">Select target or initialize new record</p>
-            </div>
+const SuccessModal = ({ isOpen, onClose, message, subMessage, buttonText = "Proceed to Next Step" }) => (
+    <AnimatePresence>
+        {isOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                <motion.div
+                    initial={{ scale: 0.5, opacity: 0, y: 40 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                    className="bg-white rounded-[40px] p-10 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-6 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 left-0 w-full h-2 bg-indigo-600" />
 
-            {/* BIG HIGHLIGHT ADD BUTTON */}
+                    <div className="flex justify-center">
+                        <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 animate-bounce">
+                            <CheckCircle2 size={40} strokeWidth={2.5} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Success!</h3>
+                        <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest leading-relaxed">
+                            {message}
+                        </p>
+                        {subMessage && (
+                            <p className="text-xs font-bold text-slate-400 mt-2 leading-relaxed italic border-t border-slate-50 pt-4">
+                                <span className="text-slate-900">Summary:</span> {subMessage}
+                            </p>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20 uppercase tracking-[0.3em]"
+                    >
+                        {buttonText}
+                    </button>
+                </motion.div>
+            </div>
+        )}
+    </AnimatePresence>
+);
+
+const CompactRow = ({ title, items, activeId, onSelect, onAdd, icon: Icon, labelKey, typeLabel }) => (
+    <div className="w-full space-y-4">
+        <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-slate-900 rounded-full" />
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">{title}</h4>
+            </div>
             <button
                 onClick={onAdd}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100"
             >
-                <Plus size={16} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
-                CREATE NEW {typeLabel}
+                <PlusSquare size={14} /> New {typeLabel}
             </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {items.map(item => (
-                <button
-                    key={item._id}
-                    onClick={() => onSelect(item._id)}
-                    className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${activeId === item._id
-                        ? 'bg-slate-900 border-slate-900 text-white shadow-xl'
-                        : 'bg-white border-slate-200 hover:border-slate-300 text-slate-600 hover:shadow-sm'
-                        }`}
-                >
-                    <div className={`p-2 rounded-lg ${activeId === item._id ? 'bg-white/10' : 'bg-slate-50'}`}>
-                        <Icon size={14} />
-                    </div>
-                    <span className="text-xs font-semibold truncate flex-1">{item[labelKey] || 'Untitled'}</span>
-                    {activeId === item._id && <div className="p-0.5 bg-white text-slate-900 rounded-full"><Check size={10} strokeWidth={4} /></div>}
-                </button>
-            ))}
-
-            {/* IN-GRID HIGHLIGHT ADD (Alternate Entry Point) */}
-            <button
-                onClick={onAdd}
-                className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all group"
-            >
-                <PlusCircle size={16} className="group-hover:scale-125 transition-transform" />
-                <span className="text-xs font-bold uppercase">Quick Add</span>
-            </button>
+        <div className="bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                    <thead>
+                        <tr className="bg-slate-50/50 border-b border-slate-50">
+                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Class</th>
+                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">{typeLabel} Name</th>
+                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Metadata</th>
+                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Registered</th>
+                            <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                        {items.length > 0 ? items.map((item, idx) => (
+                            <tr
+                                key={item._id || idx}
+                                onClick={() => onSelect(item._id)}
+                                className={`hover:bg-slate-50/80 transition-colors cursor-pointer group ${activeId === item._id ? 'bg-indigo-50/40' : ''}`}
+                            >
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${activeId === item._id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                        {item.className || 'N/A'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${activeId === item._id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
+                                            <Icon size={14} />
+                                        </div>
+                                        <span className={`text-xs font-bold ${activeId === item._id ? 'text-indigo-600' : 'text-slate-700'}`}>
+                                            {item[labelKey] || 'Untitled'}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="text-[10px] font-semibold text-slate-400 uppercase">{item.language || item.sequence || 'Standard'}</span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                        <Calendar size={12} strokeWidth={2.5} />
+                                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '---'}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <button
+                                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeId === item._id
+                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
+                                            : 'bg-slate-900 text-white opacity-0 group-hover:opacity-100 hover:bg-indigo-600'
+                                            }`}
+                                    >
+                                        {activeId === item._id ? 'Active' : 'Next Step'}
+                                    </button>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan="5" className="px-6 py-20 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">
+                                    No node records available in this sequence
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 );
@@ -134,6 +209,8 @@ const QuizSet = () => {
     const [activeChapterId, setActiveChapterId] = useState('');
     const [createType, setCreateType] = useState(null);
     const [modal, setModal] = useState({ open: false, title: '', fields: [], icon: null, onSubmit: null, contextLabel: '', contextValue: '' });
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successPrompt, setSuccessPrompt] = useState({ title: '', nextStep: '' });
 
     useEffect(() => {
         dispatch(fetchExamTypes());
@@ -151,16 +228,49 @@ const QuizSet = () => {
 
     useEffect(() => {
         if (success && lastCreatedId && createType) {
-            if (createType === 'exam') setActiveExamId(lastCreatedId);
-            else if (createType === 'section') setActiveSectionId(lastCreatedId);
-            else if (createType === 'chapter') setActiveChapterId(lastCreatedId);
+            let title = '';
+            let nextStep = '';
+
+            if (createType === 'exam') {
+                setActiveExamId(lastCreatedId);
+                title = 'Exam Type Registered';
+                nextStep = 'The exam catalog is ready. Please define the sections (territories) for this exam.';
+            } else if (createType === 'section') {
+                setActiveSectionId(lastCreatedId);
+                title = 'Section Node Created';
+                nextStep = 'Section is live. Now establish the chapter-level modules within this section.';
+            } else if (createType === 'chapter') {
+                setActiveChapterId(lastCreatedId);
+                title = 'Chapter Established';
+                nextStep = 'Architecture complete! You can now start adding core questions to this chapter.';
+            } else if (createType === 'question') {
+                title = 'Question Secured';
+                nextStep = 'Node successfully added to the vault. Continue adding more or switch to records view.';
+            }
+
+            setSuccessPrompt({
+                title,
+                nextStep,
+                buttonText: createType === 'question' ? 'Add Another Question' : 'Proceed to Next Step'
+            });
+            setShowSuccessModal(true);
             setModal(prev => ({ ...prev, open: false }));
             setCreateType(null);
-            setTimeout(() => dispatch(resetQuizState()), 500);
         }
-    }, [success, lastCreatedId, createType, dispatch]);
+    }, [success, lastCreatedId, createType]);
+
+    const handleCloseSuccess = () => {
+        setShowSuccessModal(false);
+        dispatch(resetQuizState());
+    };
 
     const currentStep = !activeExamId ? 1 : !activeSectionId ? 2 : !activeChapterId ? 3 : 4;
+
+    const goBack = () => {
+        if (activeChapterId) setActiveChapterId('');
+        else if (activeSectionId) setActiveSectionId('');
+        else if (activeExamId) setActiveExamId('');
+    };
 
     const openCreateExam = () => setModal({
         open: true, icon: Database, title: 'Exam Metadata',
@@ -183,12 +293,21 @@ const QuizSet = () => {
     const [qForm, setQForm] = useState({ questionText: '', options: { A: { text: '' }, B: { text: '' }, C: { text: '' }, D: { text: '' } }, correctAnswer: 'A' });
     const handleQSubmit = (e) => {
         e.preventDefault();
+        setCreateType('question');
         dispatch(createQuestion({ ...qForm, examType: activeExamId, section: activeSectionId, chapter: activeChapterId }));
     };
-    useEffect(() => { if (success) setQForm({ questionText: '', options: { A: { text: '' }, B: { text: '' }, C: { text: '' }, D: { text: '' } }, correctAnswer: 'A' }); }, [success]);
+    useEffect(() => { if (success && !showSuccessModal) setQForm({ questionText: '', options: { A: { text: '' }, B: { text: '' }, C: { text: '' }, D: { text: '' } }, correctAnswer: 'A' }); }, [success, showSuccessModal]);
 
     return (
         <div className="min-h-screen bg-slate-50/20 flex flex-col font-sans text-slate-600 antialiased selection:bg-indigo-600 selection:text-white">
+
+            <SuccessModal
+                isOpen={showSuccessModal}
+                onClose={handleCloseSuccess}
+                message={successPrompt.title}
+                subMessage={successPrompt.nextStep}
+                buttonText={successPrompt.buttonText}
+            />
 
             {/* Clean Header */}
             <header className="sticky top-0 z-[50] bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-3">
@@ -215,7 +334,7 @@ const QuizSet = () => {
 
                     <div className="flex items-center gap-2">
                         <button onClick={() => setViewMode(viewMode === 'bank' ? 'studio' : 'bank')} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-all">
-                            {viewMode === 'bank' ? <Sliders size={14} /> : <History size={14} />} {viewMode === 'bank' ? 'EDITOR' : 'RECORDS'}
+                            {viewMode === 'bank' ? <Sliders size={14} /> : <ListChecks size={14} />} {viewMode === 'bank' ? 'EDITOR' : 'QUESTION LIST'}
                         </button>
                     </div>
                 </div>
@@ -225,112 +344,140 @@ const QuizSet = () => {
 
                 {!activeChapterId && viewMode === 'studio' ? (
                     <div className="space-y-12 animate-in fade-in duration-500">
-                        {currentStep === 1 && <CompactRow title="Step 01 / Category" typeLabel="EXAM" items={examTypes} activeId={activeExamId} onSelect={setActiveExamId} onAdd={openCreateExam} icon={Database} labelKey="examType" />}
-                        {activeExamId && currentStep === 2 && <CompactRow title="Step 02 / Territory" typeLabel="SECTION" items={filteredSections} activeId={activeSectionId} onSelect={setActiveSectionId} onAdd={openCreateSection} icon={Layers} labelKey="sectionName" />}
-                        {activeSectionId && currentStep === 3 && <CompactRow title="Step 03 / Module" typeLabel="CHAPTER" items={filteredChapters} activeId={activeChapterId} onSelect={setActiveChapterId} onAdd={openCreateChapter} icon={ScrollText} labelKey="chapterName" />}
+                        {currentStep === 1 && (
+                            <CompactRow title="Step 01 / Category" typeLabel="EXAM" items={examTypes} activeId={activeExamId} onSelect={setActiveExamId} onAdd={openCreateExam} icon={Database} labelKey="examType" />
+                        )}
+
+                        {activeExamId && currentStep === 2 && (
+                            <div className="space-y-6">
+                                <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
+                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Category Selection
+                                </button>
+                                <CompactRow title="Step 02 / Territory" typeLabel="SECTION" items={filteredSections} activeId={activeSectionId} onSelect={setActiveSectionId} onAdd={openCreateSection} icon={Layers} labelKey="sectionName" />
+                            </div>
+                        )}
+
+                        {activeSectionId && currentStep === 3 && (
+                            <div className="space-y-6">
+                                <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
+                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Sections
+                                </button>
+                                <CompactRow title="Step 03 / Module" typeLabel="CHAPTER" items={filteredChapters} activeId={activeChapterId} onSelect={setActiveChapterId} onAdd={openCreateChapter} icon={ScrollText} labelKey="chapterName" />
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <AnimatePresence mode="wait">
                         {viewMode === 'studio' ? (
-                            <motion.div key="studio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-12 gap-10 items-start">
-                                {/* Centered Form Panel */}
-                                <div className="col-span-12 lg:col-span-9 space-y-8 bg-white border border-slate-100 rounded-2xl p-10 shadow-sm">
-                                    <div className="flex items-center justify-between border-b border-slate-50 pb-8">
-                                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
-                                            <span className="text-indigo-600">{activeExam?.examType}</span> <ChevronRight size={10} /> <span className="text-indigo-600">{activeSection?.sectionName}</span> <ChevronRight size={10} /> <span className="text-slate-900 border-b-2 border-indigo-600 pb-0.5">{activeChapter?.chapterName}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black border border-emerald-100">
-                                            SECURE NODE ACTIVE
-                                        </div>
-                                    </div>
+                            <motion.div key="studio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                                <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
+                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Exit Editor / Return to Chapters
+                                </button>
 
-                                    <form onSubmit={handleQSubmit} className="space-y-10">
-                                        <div className="space-y-4">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Primary Question Block
-                                            </label>
-                                            <SimpleEditor value={qForm.questionText} onChange={(val) => setQForm(p => ({ ...p, questionText: val }))} placeholder="Compose your core question prompt..." minHeight="160px" />
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Choice Grid
-                                            </label>
-                                            <div className="bg-slate-50/50 p-2 rounded-2xl space-y-2 border border-slate-100">
-                                                {['A', 'B', 'C', 'D'].map(k => (
-                                                    <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
-                                                        <div className="flex flex-col items-center gap-3 py-2 w-16 shrink-0 border-r border-slate-50">
-                                                            <span className={`text-sm font-black ${qForm.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setQForm(p => ({ ...p, correctAnswer: k }))}
-                                                                className={`w-7 h-7 rounded-lg transition-all border-2 flex items-center justify-center ${qForm.correctAnswer === k
-                                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
-                                                                    : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
-                                                                    }`}
-                                                            >
-                                                                <Check size={16} strokeWidth={4} />
-                                                            </button>
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <SimpleEditor value={qForm.options[k].text} onChange={(val) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { text: val } } }))} placeholder={`Response choice ${k}...`} minHeight="60px" />
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                <div className="grid grid-cols-12 gap-10 items-start">
+                                    {/* Centered Form Panel */}
+                                    <div className="col-span-12 lg:col-span-9 space-y-8 bg-white border border-slate-100 rounded-2xl p-10 shadow-sm">
+                                        <div className="flex items-center justify-between border-b border-slate-50 pb-8">
+                                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+                                                <span className="text-indigo-600">{activeExam?.examType}</span> <ChevronRight size={10} /> <span className="text-indigo-600">{activeSection?.sectionName}</span> <ChevronRight size={10} /> <span className="text-slate-900 border-b-2 border-indigo-600 pb-0.5">{activeChapter?.chapterName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black border border-emerald-100">
+                                                SECURE NODE ACTIVE
                                             </div>
                                         </div>
 
-                                        <div className="pt-6">
-                                            <button
-                                                type="submit"
-                                                disabled={loading}
-                                                className="px-10 py-4 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center gap-4 shadow-xl shadow-slate-100 group"
-                                            >
-                                                {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Secure Progress <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
+                                        <form onSubmit={handleQSubmit} className="space-y-10">
+                                            <div className="space-y-4">
+                                                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                    <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Primary Question Block
+                                                </label>
+                                                <SimpleEditor value={qForm.questionText} onChange={(val) => setQForm(p => ({ ...p, questionText: val }))} placeholder="Compose your core question prompt..." minHeight="160px" />
+                                            </div>
 
-                                {/* Sidebar Bank */}
-                                <div className="hidden lg:col-span-3 lg:flex flex-col gap-8 sticky top-24">
-                                    <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-4">Live Session Vault</h4>
-                                        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                            {activeChapterQuestions.map((q, idx) => (
-                                                <div key={q._id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl group relative hover:bg-white hover:border-indigo-200 transition-all cursor-default">
-                                                    <button onClick={() => dispatch(deleteQuestion(q._id))} className="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
-                                                    <p className="text-[10px] font-bold text-slate-700 line-clamp-2 italic" dangerouslySetInnerHTML={{ __html: q.questionText }} />
-                                                    <div className="mt-3 flex items-center gap-2">
-                                                        <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black">{q.correctAnswer}</div>
-                                                        <span className="text-[8px] font-bold text-slate-300 uppercase">STORED_SEQ_0{idx + 1}</span>
-                                                    </div>
+                                            <div className="space-y-6">
+                                                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                    <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Choice Grid
+                                                </label>
+                                                <div className="bg-slate-50/50 p-2 rounded-2xl space-y-2 border border-slate-100">
+                                                    {['A', 'B', 'C', 'D'].map(k => (
+                                                        <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
+                                                            <div className="flex flex-col items-center gap-3 py-2 w-16 shrink-0 border-r border-slate-50">
+                                                                <span className={`text-sm font-black ${qForm.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setQForm(p => ({ ...p, correctAnswer: k }))}
+                                                                    className={`w-7 h-7 rounded-lg transition-all border-2 flex items-center justify-center ${qForm.correctAnswer === k
+                                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
+                                                                        : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
+                                                                        }`}
+                                                                >
+                                                                    <Check size={16} strokeWidth={4} />
+                                                                </button>
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <SimpleEditor value={qForm.options[k].text} onChange={(val) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { text: val } } }))} placeholder={`Response choice ${k}...`} minHeight="60px" />
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                            {activeChapterQuestions.length === 0 && <p className="text-[10px] text-slate-300 italic text-center py-10 uppercase tracking-widest">Vault Empty</p>}
-                                        </div>
+                                            </div>
+
+                                            <div className="pt-6">
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className="px-10 py-4 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center gap-4 shadow-xl shadow-slate-100 group"
+                                                >
+                                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Secure Progress <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
 
-                                    <div className="p-6 bg-slate-900 rounded-2xl text-white shadow-2xl relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-600 opacity-20 blur-3xl group-hover:opacity-40 transition-opacity" />
-                                        <p className="text-[10px] font-black uppercase text-indigo-400 mb-3 tracking-widest leading-none underline decoration-indigo-400 underline-offset-4">Quality Indicator</p>
-                                        <p className="text-xs font-bold leading-relaxed mb-4">You have successfully secured {activeChapterQuestions.length} nodes to the repository.</p>
-                                        <div className="flex gap-1">
-                                            <div className="h-1 bg-white/10 flex-1 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 w-1/2" /></div>
-                                            <div className="h-1 bg-white/10 flex-1 rounded-full" />
-                                            <div className="h-1 bg-white/10 flex-1 rounded-full" />
+                                    {/* Sidebar Bank */}
+                                    <div className="hidden lg:col-span-3 lg:flex flex-col gap-8 sticky top-24">
+                                        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-4">Live Session Vault</h4>
+                                            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                                {activeChapterQuestions.map((q, idx) => (
+                                                    <div key={q._id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl group relative hover:bg-white hover:border-indigo-200 transition-all cursor-default">
+                                                        <button onClick={() => dispatch(deleteQuestion(q._id))} className="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
+                                                        <p className="text-[10px] font-bold text-slate-700 line-clamp-2 italic" dangerouslySetInnerHTML={{ __html: q.questionText }} />
+                                                        <div className="mt-3 flex items-center gap-2">
+                                                            <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black">{q.correctAnswer}</div>
+                                                            <span className="text-[8px] font-bold text-slate-300 uppercase">STORED_SEQ_0{idx + 1}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {activeChapterQuestions.length === 0 && <p className="text-[10px] text-slate-300 italic text-center py-10 uppercase tracking-widest">Vault Empty</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 bg-slate-900 rounded-2xl text-white shadow-2xl relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-600 opacity-20 blur-3xl group-hover:opacity-40 transition-opacity" />
+                                            <p className="text-[10px] font-black uppercase text-indigo-400 mb-3 tracking-widest leading-none underline decoration-indigo-400 underline-offset-4">Quality Indicator</p>
+                                            <p className="text-xs font-bold leading-relaxed mb-4">You have successfully secured {activeChapterQuestions.length} nodes to the repository.</p>
+                                            <div className="flex gap-1">
+                                                <div className="h-1 bg-white/10 flex-1 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 w-1/2" /></div>
+                                                <div className="h-1 bg-white/10 flex-1 rounded-full" />
+                                                <div className="h-1 bg-white/10 flex-1 rounded-full" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </motion.div>
                         ) : (
                             <motion.div key="bank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-32">
+                                <button onClick={() => setViewMode('studio')} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
+                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Return to Editor / Selection
+                                </button>
+
                                 <div className="flex items-center justify-between pb-8 border-b border-slate-100">
                                     <div>
-                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Active Knowledge Bank</h2>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Chapter Question List</h2>
                                         <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-[0.2em]">{activeChapter?.chapterName}</p>
                                     </div>
-                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-5 py-2 rounded-xl border border-indigo-100 uppercase tracking-widest">{activeChapterQuestions.length} SECURED RECORDS</span>
+                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-5 py-2 rounded-xl border border-indigo-100 uppercase tracking-widest">{activeChapterQuestions.length} VERIFIED QUESTIONS</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {activeChapterQuestions.map((q, idx) => (

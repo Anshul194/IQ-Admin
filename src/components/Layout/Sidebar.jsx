@@ -53,9 +53,7 @@ const Sidebar = () => {
         { icon: Users2, label: 'Team', path: '/team' },
         { icon: UserCircle, label: 'Student DB', path: '/students' },
         { icon: FileQuestion, label: 'Quiz-set', path: '/quiz-set' },
-        { icon: BookMarked, label: 'Courses', path: '/courses' },
-        { icon: BarChart4, label: 'Analytics', path: '/analytics' },
-        { icon: Settings, label: 'Settings', path: '/settings' },
+
     ];
 
     return (
