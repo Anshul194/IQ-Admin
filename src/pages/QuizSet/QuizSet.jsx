@@ -100,8 +100,8 @@ const CompactRow = ({ title, items, activeId, onSelect, onAdd, icon: Icon, label
                     key={item._id}
                     onClick={() => onSelect(item._id)}
                     className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${activeId === item._id
-                            ? 'bg-slate-900 border-slate-900 text-white shadow-xl'
-                            : 'bg-white border-slate-200 hover:border-slate-300 text-slate-600 hover:shadow-sm'
+                        ? 'bg-slate-900 border-slate-900 text-white shadow-xl'
+                        : 'bg-white border-slate-200 hover:border-slate-300 text-slate-600 hover:shadow-sm'
                         }`}
                 >
                     <div className={`p-2 rounded-lg ${activeId === item._id ? 'bg-white/10' : 'bg-slate-50'}`}>
@@ -164,7 +164,7 @@ const QuizSet = () => {
 
     const openCreateExam = () => setModal({
         open: true, icon: Database, title: 'Exam Metadata',
-        fields: [{ name: 'examType', label: 'Name', required: true }, { name: 'className', label: 'Class', type: 'select', options: ['5th', '6th', '9th', 'Other'], required: true }, { name: 'language', label: 'Language', type: 'select', options: ['Hindi', 'English', 'Marathi'], required: true }],
+        fields: [{ name: 'examType', label: 'Name', required: true }, { name: 'className', label: 'Class', type: 'select', options: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'], required: true }, { name: 'language', label: 'Language', type: 'select', options: ['Hindi', 'English', 'Marathi'], required: true }],
         onSubmit: (data) => { setCreateType('exam'); dispatch(createExamType(data)); }
     });
     const openCreateSection = () => setModal({
@@ -265,8 +265,8 @@ const QuizSet = () => {
                                                                 type="button"
                                                                 onClick={() => setQForm(p => ({ ...p, correctAnswer: k }))}
                                                                 className={`w-7 h-7 rounded-lg transition-all border-2 flex items-center justify-center ${qForm.correctAnswer === k
-                                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
-                                                                        : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
+                                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
+                                                                    : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
                                                                     }`}
                                                             >
                                                                 <Check size={16} strokeWidth={4} />

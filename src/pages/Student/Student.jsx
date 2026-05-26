@@ -394,7 +394,7 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 text-center">
                 <ModernTable
-                    headers={['Student ID', 'Name', 'School', 'Class', 'Mobile', 'Actions']}
+                    headers={['Student ID', 'Name', 'School', 'Class', 'Language', 'Mobile', 'Actions']}
                     data={students}
                     loading={fetchLoading}
                     renderRow={(student, idx) => (
@@ -403,6 +403,7 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
                             <td className="px-6 py-4 text-xs font-bold text-slate-900">{student.studentName}</td>
                             <td className="px-6 py-4 text-xs font-semibold text-slate-600">{student.school?.schoolName || '—'}</td>
                             <td className="px-6 py-4 text-xs font-bold text-violet-600">{student.grade}</td>
+                            <td className="px-6 py-4 text-xs font-semibold text-blue-600 uppercase tracking-tighter">{student.language || '—'}</td>
                             <td className="px-6 py-4 text-xs font-semibold text-slate-600">{student.mobileNumber}</td>
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -433,6 +434,26 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
                     <SelectField label="Gender" icon={User} options={['Male', 'Female', 'Other']} value={formData.gender} onChange={v => setFormData(p => ({ ...p, gender: v }))} required />
                     <InputField label="Date of Birth" icon={Calendar} type="date" value={formData.dob} onChange={v => setFormData(p => ({ ...p, dob: v }))} required />
                 </div>
+                <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                    <SelectField
+                        label="Grade / Class"
+                        icon={GraduationCap}
+                        placeholder="Select Grade"
+                        options={['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th']}
+                        value={formData.grade}
+                        onChange={v => setFormData(p => ({ ...p, grade: v }))}
+                        required
+                    />
+                    <SelectField
+                        label="Language"
+                        icon={Languages}
+                        placeholder="Select Language"
+                        options={['English', 'Hindi', 'Marathi']}
+                        value={formData.language}
+                        onChange={v => setFormData(p => ({ ...p, language: v }))}
+                        required
+                    />
+                </div>
             </div>
             {error && <p className="text-xs font-bold text-rose-500 bg-rose-50 p-4 rounded-xl">{typeof error === 'string' ? error : 'Action failed'}</p>}
             {success && <p className="text-xs font-bold text-emerald-500 bg-emerald-50 p-4 rounded-xl">{currentEntity ? 'Student updated' : 'Student registered'} successfully!</p>}
@@ -442,7 +463,7 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
                 </button>
                 {currentEntity && <button type="button" onClick={() => { setEditingId(null); dispatch(resetStudentState()); }} className="px-8 py-3.5 bg-slate-100 text-slate-500 rounded-xl font-bold text-xs hover:bg-rose-50 hover:text-rose-600 transition-all">Cancel Edit</button>}
             </div>
-        </motion.form>
+        </motion.form >
     );
 };
 

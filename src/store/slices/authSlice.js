@@ -6,13 +6,7 @@ export const loginUser = createAsyncThunk(
     'auth/loginUser',
     async (credentials, { rejectWithValue }) => {
         try {
-            // payload: { contactNumber: "...", password: "..." }
             const response = await api.post('/auth/login', credentials);
-
-            // Assuming response contains { token, user: { name, role, ... } }
-            if (response.token) {
-                localStorage.setItem('token', response.token);
-            }
             return response;
         } catch (error) {
             return rejectWithValue(error);
@@ -29,9 +23,15 @@ const getInitialUser = () => {
     }
 };
 
+const getInitialToken = () => {
+    const token = localStorage.getItem('token');
+    return (token && token !== 'undefined' && token !== 'null') ? token : null;
+};
+
 const initialState = {
     user: getInitialUser(),
-    isAuthenticated: !!localStorage.getItem('token'),
+    token: getInitialToken(),
+    isAuthenticated: !!getInitialToken(),
     loading: false,
     error: null,
 };
@@ -42,6 +42,7 @@ const authSlice = createSlice({
     reducers: {
         logout: (state) => {
             state.user = null;
+            state.token = null;
             state.isAuthenticated = false;
             state.loading = false;
             state.error = null;
@@ -60,9 +61,14 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
-                state.isAuthenticated = true;
-                state.user = action.payload.user;
-                localStorage.setItem('user', JSON.stringify(action.payload.user));
+                const { success, data } = action.payload;
+                if (success && data?.accessToken) {
+                    state.isAuthenticated = true;
+                    state.token = data.accessToken;
+                    state.user = data.user;
+                    localStorage.setItem('token', data.accessToken);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
