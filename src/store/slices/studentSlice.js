@@ -113,15 +113,35 @@ const studentSlice = createSlice({
     extraReducers: (builder) => {
         builder
             // Loading and Success handlers
+            // Create handlers
             .addCase(createSchool.pending, (state) => { state.loading = true; state.success = false; })
             .addCase(createSchool.fulfilled, (state, action) => { state.loading = false; state.success = true; if (action.payload?.data) state.schools.push(action.payload.data); })
+
+            .addCase(createStudent.pending, (state) => { state.loading = true; state.success = false; })
+            .addCase(createStudent.fulfilled, (state, action) => { state.loading = false; state.success = true; if (action.payload?.data) state.students.push(action.payload.data); })
+
+            .addCase(createExamCenter.pending, (state) => { state.loading = true; state.success = false; })
+            .addCase(createExamCenter.fulfilled, (state, action) => { state.loading = false; state.success = true; if (action.payload?.data) state.examCenters.push(action.payload.data); })
+
+            // Update handlers
             .addCase(updateSchool.fulfilled, (state, action) => {
                 const updated = action.payload?.data || action.payload;
                 state.schools = state.schools.map(s => s._id === updated._id ? updated : s);
                 state.success = true;
                 state.currentEntity = null;
             })
-            .addCase(deleteSchool.fulfilled, (state, action) => { state.schools = state.schools.filter(s => s._id !== action.payload); })
+            .addCase(updateStudent.fulfilled, (state, action) => {
+                const updated = action.payload?.data || action.payload;
+                state.students = state.students.map(s => s._id === updated._id ? updated : s);
+                state.success = true;
+                state.currentEntity = null;
+            })
+            .addCase(updateExamCenter.fulfilled, (state, action) => {
+                const updated = action.payload?.data || action.payload;
+                state.examCenters = state.examCenters.map(c => c._id === updated._id ? updated : c);
+                state.success = true;
+                state.currentEntity = null;
+            })
 
             // Get By ID handlers
             .addCase(fetchSchoolById.pending, (state) => { state.loading = true; })
@@ -138,22 +158,9 @@ const studentSlice = createSlice({
             .addCase(fetchExamCenters.fulfilled, (state, action) => { state.fetchLoading = false; state.examCenters = action.payload?.data || action.payload || []; })
             .addCase(fetchCoordinators.fulfilled, (state, action) => { state.fetchLoading = false; state.coordinators = action.payload?.data || action.payload || []; })
 
-            // Student Update/Delete
-            .addCase(updateStudent.fulfilled, (state, action) => {
-                const updated = action.payload?.data || action.payload;
-                state.students = state.students.map(s => s._id === updated._id ? updated : s);
-                state.success = true;
-                state.currentEntity = null;
-            })
+            // Delete handlers
+            .addCase(deleteSchool.fulfilled, (state, action) => { state.schools = state.schools.filter(s => s._id !== action.payload); })
             .addCase(deleteStudent.fulfilled, (state, action) => { state.students = state.students.filter(s => s._id !== action.payload); })
-
-            // Exam Center Update/Delete
-            .addCase(updateExamCenter.fulfilled, (state, action) => {
-                const updated = action.payload?.data || action.payload;
-                state.examCenters = state.examCenters.map(c => c._id === updated._id ? updated : c);
-                state.success = true;
-                state.currentEntity = null;
-            })
             .addCase(deleteExamCenter.fulfilled, (state, action) => { state.examCenters = state.examCenters.filter(c => c._id !== action.payload); });
     }
 });

@@ -185,6 +185,43 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, title }) => (
     </AnimatePresence>
 );
 
+const SuccessModal = ({ isOpen, onClose, message }) => (
+    <AnimatePresence>
+        {isOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                <motion.div
+                    initial={{ scale: 0.5, opacity: 0, y: 40 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                    className="bg-white rounded-[40px] p-10 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-6 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
+
+                    <div className="flex justify-center">
+                        <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center text-emerald-500 animate-bounce">
+                            <CheckCircle2 size={40} strokeWidth={2.5} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Success!</h3>
+                        <p className="text-sm font-bold text-slate-500 leading-relaxed">
+                            {message || 'Your action has been processed successfully.'}
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
+                    >
+                        Great, Continue
+                    </button>
+                </motion.div>
+            </div>
+        )}
+    </AnimatePresence>
+);
+
 const InputField = ({ label, icon: Icon, placeholder, type = 'text', value, onChange, required = false }) => (
     <div className="space-y-1.5">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
@@ -285,6 +322,7 @@ const SchoolMasterView = ({ coordinators, mode, setMode, schools, fetchLoading, 
     const [formData, setFormData] = useState({ coordinator: '', contactNumber: '', schoolName: '', address: '', associateCoordinatorName: '' });
     const [deleteId, setDeleteId] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         if (currentEntity && mode === 'create') {
@@ -306,11 +344,16 @@ const SchoolMasterView = ({ coordinators, mode, setMode, schools, fetchLoading, 
 
     useEffect(() => {
         if (success) {
+            setShowSuccess(true);
             setFormData({ coordinator: '', contactNumber: '', schoolName: '', address: '', associateCoordinatorName: '' });
             setEditingId(null);
-            setTimeout(() => dispatch(resetStudentState()), 3000);
         }
-    }, [success, dispatch, setEditingId]);
+    }, [success, setEditingId]);
+
+    const handleCloseSuccess = () => {
+        setShowSuccess(false);
+        dispatch(resetStudentState());
+    };
 
     if (mode === 'list') {
         return (
@@ -351,7 +394,13 @@ const SchoolMasterView = ({ coordinators, mode, setMode, schools, fetchLoading, 
                 <InputField label="Associate Coordinator Name" icon={UserPlus} placeholder="Enter associate coordinator" value={formData.associateCoordinatorName} onChange={v => setFormData(p => ({ ...p, associateCoordinatorName: v }))} />
             </div>
             {error && <p className="text-xs font-bold text-rose-500 bg-rose-50 p-4 rounded-xl">{typeof error === 'string' ? error : 'Action failed'}</p>}
-            {success && <p className="text-xs font-bold text-emerald-500 bg-emerald-50 p-4 rounded-xl">{currentEntity ? 'School updated' : 'School created'} successfully!</p>}
+
+            <SuccessModal
+                isOpen={showSuccess}
+                onClose={handleCloseSuccess}
+                message={currentEntity ? 'School master profile has been updated.' : 'New school registration completed successfully.'}
+            />
+
             <div className="flex flex-wrap gap-3">
                 <button type="submit" disabled={loading} className="px-6 py-3 bg-violet-600 text-white rounded-xl font-bold text-xs hover:bg-violet-700 transition-all flex items-center gap-2 disabled:opacity-50">
                     {loading ? <Loader2 size={16} className="animate-spin" /> : currentEntity ? <Save size={16} /> : <Plus size={16} />} {currentEntity ? 'Update Changes' : 'Create School'}
@@ -367,6 +416,7 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
     const { loading, success, error, currentEntity } = useSelector(state => state.student);
     const [deleteId, setDeleteId] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const [formData, setFormData] = useState({ mobileNumber: '', paidAmount: '', studentName: '', address: '', coordinator: '', school: '', gender: '', dob: '', grade: '', language: '', sendWhatsappAlert: true, isActive: true, isSubscribed: true, password: 'studentPassword123' });
 
     useEffect(() => {
@@ -384,11 +434,16 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
 
     useEffect(() => {
         if (success) {
+            setShowSuccess(true);
             setFormData({ mobileNumber: '', paidAmount: '', studentName: '', address: '', coordinator: '', school: '', gender: '', dob: '', grade: '', language: '', sendWhatsappAlert: true, isActive: true, isSubscribed: true, password: 'studentPassword123' });
             setEditingId(null);
-            setTimeout(() => dispatch(resetStudentState()), 3000);
         }
-    }, [success, dispatch, setEditingId]);
+    }, [success, setEditingId]);
+
+    const handleCloseSuccess = () => {
+        setShowSuccess(false);
+        dispatch(resetStudentState());
+    };
 
     if (mode === 'list') {
         return (
@@ -456,7 +511,13 @@ const StudentMasterView = ({ coordinators, schools, mode, setMode, students, fet
                 </div>
             </div>
             {error && <p className="text-xs font-bold text-rose-500 bg-rose-50 p-4 rounded-xl">{typeof error === 'string' ? error : 'Action failed'}</p>}
-            {success && <p className="text-xs font-bold text-emerald-500 bg-emerald-50 p-4 rounded-xl">{currentEntity ? 'Student updated' : 'Student registered'} successfully!</p>}
+
+            <SuccessModal
+                isOpen={showSuccess}
+                onClose={handleCloseSuccess}
+                message={currentEntity ? 'The student record has been updated successfully.' : 'New student has been registered and credentials generated.'}
+            />
+
             <div className="flex flex-wrap gap-3 mt-8">
                 <button type="submit" disabled={loading} className="px-8 py-3.5 bg-violet-600 text-white rounded-xl font-bold text-xs hover:bg-violet-700 transition-all flex items-center gap-2 shadow-lg shadow-violet-100 disabled:opacity-50">
                     {loading ? <Loader2 size={16} className="animate-spin" /> : currentEntity ? <Save size={16} /> : <Plus size={16} strokeWidth={2.5} />} {currentEntity ? 'Update Record' : 'Register Student'}
@@ -472,6 +533,7 @@ const ExamCenterView = ({ schools, mode, setMode, examCenters, fetchLoading, set
     const { loading, success, error, currentEntity } = useSelector(state => state.student);
     const [deleteId, setDeleteId] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const [formData, setFormData] = useState({ firmName: '', computerCount: '', respondentName: '', contactNumber: '', address: '', school: '' });
 
     useEffect(() => {
@@ -487,11 +549,16 @@ const ExamCenterView = ({ schools, mode, setMode, examCenters, fetchLoading, set
 
     useEffect(() => {
         if (success) {
+            setShowSuccess(true);
             setFormData({ firmName: '', computerCount: '', respondentName: '', contactNumber: '', address: '', school: '' });
             setEditingId(null);
-            setTimeout(() => dispatch(resetStudentState()), 3000);
         }
-    }, [success, dispatch, setEditingId]);
+    }, [success, setEditingId]);
+
+    const handleCloseSuccess = () => {
+        setShowSuccess(false);
+        dispatch(resetStudentState());
+    };
 
     if (mode === 'list') {
         return (
@@ -533,7 +600,13 @@ const ExamCenterView = ({ schools, mode, setMode, examCenters, fetchLoading, set
                 <div className="md:col-span-2"><SelectField label="School" icon={School} placeholder="Select School" options={schools.map(s => ({ id: s._id, label: s.schoolName }))} value={formData.school} onChange={v => setFormData(p => ({ ...p, school: v }))} required /></div>
             </div>
             {error && <p className="text-xs font-bold text-rose-500 bg-rose-50 p-4 rounded-xl">{typeof error === 'string' ? error : 'Action failed'}</p>}
-            {success && <p className="text-xs font-bold text-emerald-500 bg-emerald-50 p-4 rounded-xl">{currentEntity ? 'Center updated' : 'Center created'} successfully!</p>}
+
+            <SuccessModal
+                isOpen={showSuccess}
+                onClose={handleCloseSuccess}
+                message={currentEntity ? 'Exam Center details have been updated successfully.' : 'New Exam Center has been established and added to the network.'}
+            />
+
             <div className="flex flex-wrap gap-3 mt-8">
                 <button type="submit" disabled={loading} className="px-8 py-3.5 bg-violet-600 text-white rounded-xl font-bold text-xs hover:bg-violet-700 transition-all flex items-center gap-2 shadow-lg shadow-violet-100 disabled:opacity-50">
                     {loading ? <Loader2 size={16} className="animate-spin" /> : currentEntity ? <Save size={16} /> : <Plus size={16} strokeWidth={2.5} />} {currentEntity ? 'Update Center' : 'Create Center'}

@@ -4,6 +4,7 @@ import uiReducer from './slices/uiSlice';
 import teamReducer from './slices/teamSlice';
 import studentReducer from './slices/studentSlice';
 import quizReducer from './slices/quizSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     team: teamReducer,
     student: studentReducer,
     quiz: quizReducer,
+    dashboard: dashboardReducer,
   },
 });

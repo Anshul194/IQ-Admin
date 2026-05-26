@@ -13,50 +13,40 @@ import {
     ArrowDownRight
 } from 'lucide-react';
 
-const StatCard = ({ title, value, percentage, icon: Icon, color, trend, trendUp }) => (
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchDashboardStats } from '../../store/slices/dashboardSlice';
+
+const StatCard = ({ title, value, icon: Icon, color }) => (
     <motion.div
         whileHover={{ y: -4 }}
-        className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-full group transition-all"
+        className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between group transition-all"
     >
-        <div className="flex items-start justify-between">
-            <div className={`p-3 rounded-xl`} style={{ backgroundColor: `${color}10`, color }}>
-                <Icon size={22} />
-            </div>
-            <div className={`flex items-center space-x-1 font-bold text-xs ${trendUp ? 'text-emerald-500' : 'text-rose-500'}`}>
-                <span>{trend}%</span>
-                {trendUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-            </div>
+        <div className="space-y-2">
+            <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">{title}</h3>
+            <p className="text-3xl font-black text-slate-800 tracking-tight">{value}</p>
         </div>
 
-        <div className="mt-6">
-            <h3 className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">{title}</h3>
-            <div className="flex items-end justify-between mt-1">
-                <span className="text-2xl font-bold text-slate-800 tracking-tight">{value}</span>
-                <div className="w-11 h-11 relative flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-slate-50" />
-                        <circle cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={113} strokeDashoffset={113 - (113 * percentage) / 100} className="transition-all duration-1000 ease-out" style={{ color }} />
-                    </svg>
-                    <span className="absolute text-[9px] font-black" style={{ color }}>{percentage}%</span>
-                </div>
-            </div>
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center`} style={{ backgroundColor: `${color}10`, color }}>
+            <Icon size={26} />
         </div>
     </motion.div>
 );
 
 const Dashboard = () => {
-    const stats = [
-        { title: 'Total Registered Students', value: '8,937', percentage: 75, icon: Users, color: '#6366f1', trend: '12.5', trendUp: true },
-        { title: 'Registered Schools', value: '1,664', percentage: 62, icon: School, color: '#06b6d4', trend: '8.7', trendUp: true },
-        { title: 'Teaching Teams Created', value: '50', percentage: 45, icon: Layers, color: '#f59e0b', trend: '2.1', trendUp: false },
+    const dispatch = useDispatch();
+    const { stats, loading } = useSelector((state) => state.dashboard);
+
+    React.useEffect(() => {
+        dispatch(fetchDashboardStats());
+    }, [dispatch]);
+
+    const statCards = [
+        { title: 'Total Registered Students', value: stats?.totalStudents?.toLocaleString() || '0', icon: Users, color: '#6366f1' },
+        { title: 'Registered Schools', value: stats?.totalSchools?.toLocaleString() || '0', icon: School, color: '#06b6d4' },
+        { title: 'Active Coordinators', value: stats?.totalCoordinators?.toLocaleString() || '0', icon: Layers, color: '#f59e0b' },
     ];
 
-    const recentAdmissions = [
-        { id: '9162', name: 'Anshul', contact: '7014628523', address: 'Delhi', coordinator: 'Shriisagar Mali', school: 'Dynamic English Medium' },
-        { id: '9109', name: 'Anjali Shinde', contact: '9405266005', address: 'MiraJ', coordinator: 'Aniruddha Mane', school: 'Ideal English School' },
-        { id: '9108', name: 'Aniruddha A.', contact: '8080772202', address: 'MiraJ', coordinator: 'Aniruddha Mane', school: 'Ideal English School' },
-        { id: '9067', name: 'Arav Jay Gavall', contact: '9028287977', address: 'MiraJ', coordinator: 'Aniruddha Mane', school: 'M. E. S. English School' },
-    ];
+    const recentAdmissions = stats?.recentStudents || [];
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
@@ -80,7 +70,7 @@ const Dashboard = () => {
 
             {/* Stats Summary Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stats.map((stat, idx) => (
+                {statCards.map((stat, idx) => (
                     <StatCard key={idx} {...stat} />
                 ))}
             </div>
@@ -114,33 +104,37 @@ const Dashboard = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">ID</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Candidate Profile</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Coordinator</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institution</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Grade</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Language</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {recentAdmissions.map((row) => (
-                                <tr key={row.id} className="hover:bg-slate-50/30 transition-colors group">
-                                    <td className="px-6 py-5 text-center text-xs font-bold text-slate-400">#{row.id}</td>
+                                <tr key={row._id} className="hover:bg-slate-50/30 transition-colors group">
+                                    <td className="px-6 py-5 text-center text-xs font-bold text-slate-400">#{row._id.slice(-4)}</td>
                                     <td className="px-6 py-5">
                                         <div className="flex items-center space-x-3">
                                             <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 font-bold text-[10px]">
-                                                {row.name.substring(0, 1)}
+                                                {row.studentName?.substring(0, 1)}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-700">{row.name}</span>
-                                                <span className="text-[10px] font-semibold text-slate-400">{row.address}</span>
+                                                <span className="text-sm font-bold text-slate-700">{row.studentName}</span>
+                                                <span className="text-[10px] font-semibold text-slate-400">{row.address || 'N/A'}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5 text-xs font-semibold text-slate-500">{row.contact}</td>
+                                    <td className="px-6 py-5 text-xs font-semibold text-slate-500">{row.mobileNumber}</td>
                                     <td className="px-6 py-5">
                                         <span className="text-[10px] font-bold bg-violet-50 text-violet-600 px-2.5 py-1 rounded-full uppercase tracking-tighter">
-                                            {row.coordinator}
+                                            Grade {row.grade || 'N/A'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-5 text-xs font-semibold text-slate-500">{row.school}</td>
+                                    <td className="px-6 py-5 text-xs font-semibold text-slate-500">
+                                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
+                                            {row.language || 'English'}
+                                        </span>
+                                    </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
