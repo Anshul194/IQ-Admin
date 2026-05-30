@@ -11,6 +11,7 @@ import {
     Database, PlusCircle, AlertTriangle, X,
     Activity, ShieldCheck, Mail
 } from 'lucide-react';
+import ExportMenu from '../../components/Common/ExportMenu';
 import {
     fetchSchools, createSchool, updateSchool, deleteSchool, fetchSchoolById,
     createStudent, fetchStudents, updateStudent, deleteStudent, fetchStudentById,
@@ -676,9 +677,21 @@ const Student = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 w-full lg:scale-[1.01] origin-top text-center">
-                    <div className="bg-white border border-slate-100 rounded-[32px] p-6 md:p-10 shadow-sm relative overflow-hidden">
-                        <ViewToggle mode={viewMode} setMode={setViewMode} color={currentTabColor} />
+                <div className="flex-1 w-full lg:scale-[1.01] origin-top text-center text-left">
+                    <div className="bg-white border border-slate-100 rounded-[32px] p-6 md:p-10 shadow-sm relative overflow-visible">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                            <ViewToggle mode={viewMode} setMode={setViewMode} color={currentTabColor} />
+                            {viewMode === 'list' && (
+                                <ExportMenu
+                                    exportType={
+                                        activeTab === 'School Master' ? 'schools' :
+                                            activeTab === 'Student Master' ? 'students' :
+                                                'exam-centers'
+                                    }
+                                    label={`Export ${activeTab}`}
+                                />
+                            )}
+                        </div>
                         <AnimatePresence mode="wait">
                             <motion.div key={activeTab + viewMode + (editingId || 'new')} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                                 {activeTab === 'School Master' && <SchoolMasterView coordinators={coordinators} mode={viewMode} setMode={setViewMode} schools={schools} fetchLoading={fetchLoading} setEditingId={setEditingId} />}

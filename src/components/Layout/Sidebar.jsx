@@ -52,6 +52,7 @@ const Sidebar = () => {
         { icon: LayoutGrid, label: 'Overview', path: '/dashboard' },
         { icon: Users2, label: 'Team', path: '/team' },
         { icon: UserCircle, label: 'Student DB', path: '/students' },
+        { icon: BarChart4, label: 'Results', path: '/results' },
         { icon: FileQuestion, label: 'Quiz-set', path: '/quiz-set' },
 
     ];

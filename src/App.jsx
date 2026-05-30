@@ -6,6 +6,7 @@ import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Team from './pages/Team/Team';
 import Student from './pages/Student/Student';
+import Results from './pages/Results/Results';
 import QuizSet from './pages/QuizSet/QuizSet';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
@@ -87,6 +88,18 @@ function App() {
             isAuthenticated ? (
               <Layout>
                 <Student />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/results"
+          element={
+            isAuthenticated ? (
+              <Layout>
+                <Results />
               </Layout>
             ) : (
               <Navigate to="/login" />

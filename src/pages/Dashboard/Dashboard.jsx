@@ -10,8 +10,10 @@ import {
     Trash2,
     Calendar,
     Layers,
-    ArrowDownRight
+    ArrowDownRight,
+    Download
 } from 'lucide-react';
+import ExportMenu from '../../components/Common/ExportMenu';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDashboardStats } from '../../store/slices/dashboardSlice';
@@ -65,6 +67,7 @@ const Dashboard = () => {
                         <Filter size={16} />
                         <span>Advanced Filters</span>
                     </button>
+                    <ExportMenu exportType="all" label="Export All Data" />
                 </div>
             </div>
 
@@ -76,7 +79,7 @@ const Dashboard = () => {
             </div>
 
             {/* Data Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-visible">
                 <div className="p-6 md:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-50">
                     <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-violet-50 text-violet-600 rounded-xl flex items-center justify-center">
@@ -93,7 +96,7 @@ const Dashboard = () => {
                                 className="pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs font-semibold w-full sm:w-48 focus:ring-2 focus:ring-violet-500/10"
                             />
                         </div>
-                        <button className="text-xs font-bold text-violet-600 px-3 py-2 bg-violet-50 rounded-xl hover:bg-indigo-100 transition-colors">Export CSV</button>
+                        <ExportMenu exportType="admissions" label="Export Admissions" />
                     </div>
                 </div>
 

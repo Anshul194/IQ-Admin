@@ -13,6 +13,7 @@ import {
     getTeamMemberById, updateTeamMember, deleteTeamMember,
     resetUpdateState, resetDeleteState, clearSelectedMember
 } from '../../store/slices/teamSlice';
+import ExportMenu from '../../components/Common/ExportMenu';
 
 // ─── Role Config ─────────────────────────────────────────────────────────────
 const ROLES = [
@@ -594,6 +595,10 @@ const DirectoryView = () => {
                     className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-violet-600 hover:border-violet-200 transition-all shadow-sm active:scale-95">
                     <RefreshCw size={16} className={fetchingAll ? 'animate-spin' : ''} />
                 </button>
+                <ExportMenu
+                    exportType={filterRole === 'All' ? 'team' : `team?role=${filterRole}`}
+                    label={`Export ${filterRole === 'All' ? 'All' : filterRole}`}
+                />
             </div>
 
             {/* Content */}
@@ -740,7 +745,7 @@ const OnboardingView = () => {
 
             <div className="flex-1 w-full">
                 <motion.div key={activeRole} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="bg-white border border-slate-100 rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden">
+                    className="bg-white border border-slate-100 rounded-3xl p-6 md:p-10 shadow-sm relative overflow-visible">
                     <AnimatePresence>
                         {success && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
