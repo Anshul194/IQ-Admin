@@ -532,6 +532,12 @@ const DirectoryView = () => {
                 <div className="text-[11px] font-semibold text-slate-500 space-y-1.5">
                     <div className="flex items-center gap-2"><Phone size={11} className="text-slate-300" /><span>{member.contactNumber || '—'}</span></div>
                     {member.address && <div className="flex items-center gap-2"><MapPinIcon size={11} className="text-slate-300" /><span className="truncate">{member.address}</span></div>}
+                    {getParentFromMember(member) && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-50 mt-1">
+                            <UserCheck size={11} className="text-violet-300" />
+                            <span className="text-violet-600 truncate">{getParentFromMember(member).fullName}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="pt-2 border-t border-slate-50 opacity-0 group-hover:opacity-100 transition-opacity">
                     <ActionBtns member={member} />
@@ -625,6 +631,7 @@ const DirectoryView = () => {
                                 <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">#</th>
                                 <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Member</th>
                                 <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">Role</th>
+                                <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">Reports To</th>
                                 <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">Contact</th>
                                 <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:table-cell">Address</th>
                                 <th className="px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
@@ -652,6 +659,16 @@ const DirectoryView = () => {
                                             </div>
                                         </td>
                                         <td className="px-5 py-4 hidden sm:table-cell"><RoleBadge role={role} /></td>
+                                        <td className="px-5 py-4 hidden md:table-cell">
+                                            {getParentFromMember(member) ? (
+                                                <div className="flex flex-col">
+                                                    <p className="text-xs font-bold text-slate-700 leading-tight">{getParentFromMember(member).fullName}</p>
+                                                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{getParentFromMember(member).role}</p>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs font-bold text-slate-300">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-5 py-4 hidden md:table-cell text-xs font-semibold text-slate-500">{member.contactNumber || '—'}</td>
                                         <td className="px-5 py-4 hidden lg:table-cell text-xs font-semibold text-slate-400 max-w-[180px] truncate">{member.address || '—'}</td>
                                         <td className="px-5 py-4">

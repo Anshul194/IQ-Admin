@@ -13,10 +13,10 @@ const MainLayout = ({ user, children, isTesting = false }) => {
     };
 
     const navItems = [
-        { id: 'dashboard', path: '/dashboard', icon: <Compass size={20} />, label: parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test' },
+        { id: 'dashboard', path: '/dashboard', icon: <Compass size={20} />, label: parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Aptitude Test' },
         { id: 'results', path: '/results', icon: <History size={20} />, label: 'My Results' },
         { id: 'certificates', path: '/certificates', icon: <Award size={20} />, label: 'Certificates' },
-        { id: 'students', path: '/students', icon: <Users size={20} />, label: 'Student Master' },
+        // { id: 'students', path: '/students', icon: <Users size={20} />, label: 'Student Master' },
     ];
 
     return (
