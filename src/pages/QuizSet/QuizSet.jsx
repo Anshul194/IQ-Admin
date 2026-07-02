@@ -27,6 +27,7 @@ import {
     fetchQuestions, createQuestion, deleteQuestion,
     resetQuizState
 } from '../../store/slices/quizSlice';
+import api from '../../utils/api';
 
 // --- Professional Simple Editor ---
 
@@ -207,10 +208,25 @@ const QuizSet = () => {
     const [activeExamId, setActiveExamId] = useState('');
     const [activeSectionId, setActiveSectionId] = useState('');
     const [activeChapterId, setActiveChapterId] = useState('');
-    const [createType, setCreateType] = useState(null);
+    const [createType, setCreateType] = useState('exam');
+    const [isTraitBased, setIsTraitBased] = useState(false);
     const [modal, setModal] = useState({ open: false, title: '', fields: [], icon: null, onSubmit: null, contextLabel: '', contextValue: '' });
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successPrompt, setSuccessPrompt] = useState({ title: '', nextStep: '' });
+
+    // Dynamic Aptitude Config Fetching
+    const [aptConfig, setAptConfig] = useState(null);
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await api.get('/aptitude-results/config/settings');
+                if (res.data) setAptConfig(res.data);
+            } catch (err) {
+                console.error('Failed to load Aptitude setting config:', err);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     useEffect(() => {
         dispatch(fetchExamTypes());
@@ -290,13 +306,23 @@ const QuizSet = () => {
         onSubmit: (data) => { setCreateType('chapter'); dispatch(createChapter({ ...data, sequence: Number(data.sequence) || 1, examType: activeExamId, section: activeSectionId })); }
     });
 
-    const [qForm, setQForm] = useState({ questionText: '', options: { A: { text: '' }, B: { text: '' }, C: { text: '' }, D: { text: '' } }, correctAnswer: 'A' });
+    const [qForm, setQForm] = useState({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' });
     const handleQSubmit = (e) => {
         e.preventDefault();
         setCreateType('question');
-        dispatch(createQuestion({ ...qForm, examType: activeExamId, section: activeSectionId, chapter: activeChapterId }));
+
+        const payload = { ...qForm };
+        // Auto-map traits based on exact strict requirements (Option A->Career 1, etc.)
+        if (isTraitBased) {
+            payload.options.A.traitMapping = 'CAREER_1';
+            payload.options.B.traitMapping = 'CAREER_2';
+            payload.options.C.traitMapping = 'BOTH';
+            payload.options.D.traitMapping = 'NONE';
+        }
+
+        dispatch(createQuestion({ ...payload, isTraitBased, examType: activeExamId, section: activeSectionId, chapter: activeChapterId }));
     };
-    useEffect(() => { if (success && !showSuccessModal) setQForm({ questionText: '', options: { A: { text: '' }, B: { text: '' }, C: { text: '' }, D: { text: '' } }, correctAnswer: 'A' }); }, [success, showSuccessModal]);
+    useEffect(() => { if (success && !showSuccessModal) setQForm({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' }); }, [success, showSuccessModal]);
 
     return (
         <div className="min-h-screen bg-slate-50/20 flex flex-col font-sans text-slate-600 antialiased selection:bg-indigo-600 selection:text-white">
@@ -386,13 +412,27 @@ const QuizSet = () => {
                                             </div>
                                         </div>
 
-                                        <form onSubmit={handleQSubmit} className="space-y-10">
-                                            <div className="space-y-4">
-                                                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                    <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Primary Question Block
+                                        <form onSubmit={handleQSubmit} className="space-y-6">
+                                            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-slate-800">Question Content</h3>
+                                                    <p className="text-xs text-slate-500 mt-1">Compose the question stem.</p>
+                                                </div>
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isTraitBased}
+                                                        onChange={(e) => setIsTraitBased(e.target.checked)}
+                                                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                                    />
+                                                    <span className="text-xs font-bold text-slate-700">Trait-Based (Career/Personality)</span>
                                                 </label>
-                                                <SimpleEditor value={qForm.questionText} onChange={(val) => setQForm(p => ({ ...p, questionText: val }))} placeholder="Compose your core question prompt..." minHeight="160px" />
                                             </div>
+                                            <SimpleEditor
+                                                value={qForm.questionText}
+                                                onChange={(val) => setQForm(p => ({ ...p, questionText: val }))}
+                                                placeholder="Enter your question here..."
+                                            />
 
                                             <div className="space-y-6">
                                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -400,22 +440,47 @@ const QuizSet = () => {
                                                 </label>
                                                 <div className="bg-slate-50/50 p-2 rounded-2xl space-y-2 border border-slate-100">
                                                     {['A', 'B', 'C', 'D'].map(k => (
-                                                        <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
-                                                            <div className="flex flex-col items-center gap-3 py-2 w-16 shrink-0 border-r border-slate-50">
-                                                                <span className={`text-sm font-black ${qForm.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setQForm(p => ({ ...p, correctAnswer: k }))}
-                                                                    className={`w-7 h-7 rounded-lg transition-all border-2 flex items-center justify-center ${qForm.correctAnswer === k
-                                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
-                                                                        : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
-                                                                        }`}
-                                                                >
-                                                                    <Check size={16} strokeWidth={4} />
-                                                                </button>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <SimpleEditor value={qForm.options[k].text} onChange={(val) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { text: val } } }))} placeholder={`Response choice ${k}...`} minHeight="60px" />
+                                                        <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${!isTraitBased && qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
+                                                            {!isTraitBased && (
+                                                                <div className="flex flex-col items-center gap-3 py-2 w-16 shrink-0 border-r border-slate-50">
+                                                                    <span className={`text-sm font-black ${qForm.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setQForm(p => ({ ...p, correctAnswer: k }))}
+                                                                        className={`w-7 h-7 rounded-lg transition-all border-2 flex items-center justify-center ${qForm.correctAnswer === k
+                                                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
+                                                                            : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
+                                                                            }`}
+                                                                    >
+                                                                        <Check size={16} strokeWidth={4} />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                                                <SimpleEditor value={qForm.options[k].text} onChange={(val) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], text: val } } }))} placeholder={`Response choice ${k}...`} minHeight="60px" />
+
+                                                                {isTraitBased && (
+                                                                    <div className="flex items-center mt-1">
+                                                                        {(() => {
+                                                                            const pair = aptConfig?.careerPairs?.find(p => p.chapterSequence === activeChapter?.sequence);
+                                                                            const c1 = pair?.career1 || 'First Career';
+                                                                            const c2 = pair?.career2 || 'Second Career';
+
+                                                                            let badgeText = '';
+                                                                            let badgeColor = '';
+                                                                            if (k === 'A') { badgeText = `Aura/Points → ${c1} (+1)`; badgeColor = 'bg-blue-50 text-blue-600 border-blue-200'; }
+                                                                            else if (k === 'B') { badgeText = `Aura/Points → ${c2} (+1)`; badgeColor = 'bg-indigo-50 text-indigo-600 border-indigo-200'; }
+                                                                            else if (k === 'C') { badgeText = `Aura/Points → BOTH: ${c1} & ${c2} (+1 each)`; badgeColor = 'bg-purple-50 text-purple-600 border-purple-200'; }
+                                                                            else if (k === 'D') { badgeText = `Does not award points.`; badgeColor = 'bg-slate-50 text-slate-500 border-slate-200'; }
+
+                                                                            return (
+                                                                                <span className={`text-[10px] font-bold uppercase tracking-wide px-3 py-1.5 rounded-md border ${badgeColor}`}>
+                                                                                    {badgeText}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}

@@ -8,6 +8,8 @@ import Team from './pages/Team/Team';
 import Student from './pages/Student/Student';
 import Results from './pages/Results/Results';
 import QuizSet from './pages/QuizSet/QuizSet';
+import AptitudeResults from './pages/AptitudeResults/AptitudeResults';
+import AptitudeSettings from './pages/AptitudeSettings/AptitudeSettings';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 
@@ -112,6 +114,30 @@ function App() {
             isAuthenticated ? (
               <Layout>
                 <QuizSet />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/aptitude-results"
+          element={
+            isAuthenticated ? (
+              <Layout>
+                <AptitudeResults />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/aptitude-settings"
+          element={
+            isAuthenticated ? (
+              <Layout>
+                <AptitudeSettings />
               </Layout>
             ) : (
               <Navigate to="/login" />

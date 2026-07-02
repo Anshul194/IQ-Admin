@@ -13,7 +13,8 @@ import {
     ShieldCheck,
     Menu,
     X,
-    FileQuestion
+    FileQuestion,
+    Settings2
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, Link } from 'react-router-dom';
@@ -53,6 +54,8 @@ const Sidebar = () => {
         { icon: Users2, label: 'Team', path: '/team' },
         { icon: UserCircle, label: 'Student DB', path: '/students' },
         { icon: BarChart4, label: 'Results', path: '/results' },
+        { icon: BookMarked, label: 'Aptitude Results', path: '/aptitude-results' },
+        { icon: Settings2, label: 'Aptitude Core Config', path: '/aptitude-settings' },
         { icon: FileQuestion, label: 'Quiz-set', path: '/quiz-set' },
 
     ];
