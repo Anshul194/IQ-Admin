@@ -15,16 +15,17 @@ import {
     Check, ClipboardList, Database, LayoutPanelLeft,
     MonitorPlay, ListChecks, FileText,
     ArrowUpRight, ExternalLink, Filter,
-    MoreHorizontal, Download, Share2, Calendar
+    MoreHorizontal, Download, Share2, Calendar,
+    Pencil
 } from 'lucide-react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
 import {
-    fetchExamTypes, createExamType,
-    fetchSections, createSection,
-    fetchChapters, createChapter,
-    fetchQuestions, createQuestion, deleteQuestion,
+    fetchExamTypes, createExamType, updateExamType, deleteExamType,
+    fetchSections, createSection, updateSection, deleteSection,
+    fetchChapters, createChapter, updateChapter, deleteChapter,
+    fetchQuestions, createQuestion, updateQuestion, deleteQuestion,
     resetQuizState
 } from '../../store/slices/quizSlice';
 import api from '../../utils/api';
@@ -117,7 +118,7 @@ const SuccessModal = ({ isOpen, onClose, message, subMessage, buttonText = "Proc
     </AnimatePresence>
 );
 
-const CompactRow = ({ title, items, activeId, onSelect, onAdd, icon: Icon, labelKey, typeLabel }) => (
+const CompactRow = ({ title, items, activeId, onSelect, onAdd, onEdit, onDelete, icon: Icon, labelKey, typeLabel }) => (
     <div className="w-full space-y-4">
         <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -141,22 +142,21 @@ const CompactRow = ({ title, items, activeId, onSelect, onAdd, icon: Icon, label
                             <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">{typeLabel} Name</th>
                             <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Metadata</th>
                             <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Registered</th>
-                            <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                            <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                         {items.length > 0 ? items.map((item, idx) => (
                             <tr
                                 key={item._id || idx}
-                                onClick={() => onSelect(item._id)}
-                                className={`hover:bg-slate-50/80 transition-colors cursor-pointer group ${activeId === item._id ? 'bg-indigo-50/40' : ''}`}
+                                className={`hover:bg-slate-50/80 transition-colors group ${activeId === item._id ? 'bg-indigo-50/40' : ''}`}
                             >
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-6 py-4 whitespace-nowrap" onClick={() => onSelect(item._id)}>
                                     <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${activeId === item._id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                                         {item.className || 'N/A'}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4" onClick={() => onSelect(item._id)}>
                                     <div className="flex items-center gap-3">
                                         <div className={`p-2 rounded-lg ${activeId === item._id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
                                             <Icon size={14} />
@@ -176,14 +176,31 @@ const CompactRow = ({ title, items, activeId, onSelect, onAdd, icon: Icon, label
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button
-                                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeId === item._id
-                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
-                                            : 'bg-slate-900 text-white opacity-0 group-hover:opacity-100 hover:bg-indigo-600'
-                                            }`}
-                                    >
-                                        {activeId === item._id ? 'Active' : 'Next Step'}
-                                    </button>
+                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onEdit?.(item); }}
+                                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                            title="Edit"
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onDelete?.(item._id); }}
+                                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => onSelect(item._id)}
+                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeId === item._id
+                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
+                                                : 'bg-slate-900 text-white hover:bg-indigo-600'
+                                                }`}
+                                        >
+                                            {activeId === item._id ? 'Active' : 'Select'}
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         )) : (
@@ -288,41 +305,98 @@ const QuizSet = () => {
         else if (activeExamId) setActiveExamId('');
     };
 
-    const openCreateExam = () => setModal({
-        open: true, icon: Database, title: 'Exam Metadata',
-        fields: [{ name: 'examType', label: 'Name', required: true }, { name: 'className', label: 'Class', type: 'select', options: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'], required: true }, { name: 'language', label: 'Language', type: 'select', options: ['Hindi', 'English', 'Marathi'], required: true }],
-        onSubmit: (data) => { setCreateType('exam'); dispatch(createExamType(data)); }
-    });
-    const openCreateSection = () => setModal({
-        open: true, icon: Layers, title: 'Create Section',
-        fields: [{ name: 'sectionName', label: 'Section Label', required: true }],
-        contextLabel: 'Exam Context', contextValue: activeExam?.examType,
-        onSubmit: (data) => { setCreateType('section'); dispatch(createSection({ ...data, examType: activeExamId })); }
-    });
-    const openCreateChapter = () => setModal({
-        open: true, icon: ScrollText, title: 'Create Chapter',
-        fields: [{ name: 'chapterName', label: 'Chapter Heading', required: true }, { name: 'sequence', label: 'Order Index', type: 'number', required: true }],
-        contextLabel: 'Section Context', contextValue: activeSection?.sectionName,
-        onSubmit: (data) => { setCreateType('chapter'); dispatch(createChapter({ ...data, sequence: Number(data.sequence) || 1, examType: activeExamId, section: activeSectionId })); }
-    });
+    const openCreateExam = (editData) => {
+        const isEdit = !!editData;
+        setModal({
+            open: true, icon: Database, title: isEdit ? 'Edit Exam Metadata' : 'Exam Metadata',
+            fields: [
+                { name: 'examType', label: 'Name', required: true, value: editData?.examType || '' },
+                { name: 'className', label: 'Class', type: 'select', options: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'], required: true, value: editData?.className || '' },
+                { name: 'language', label: 'Language', type: 'select', options: ['Hindi', 'English', 'Marathi'], required: true, value: editData?.language || '' }
+            ],
+            onSubmit: (data) => {
+                if (isEdit) { setCreateType('exam'); dispatch(updateExamType({ id: editData._id, data })); }
+                else { setCreateType('exam'); dispatch(createExamType(data)); }
+            }
+        });
+    };
+    const openCreateSection = (editData) => {
+        const isEdit = !!editData;
+        setModal({
+            open: true, icon: Layers, title: isEdit ? 'Edit Section' : 'Create Section',
+            fields: [{ name: 'sectionName', label: 'Section Label', required: true, value: editData?.sectionName || '' }],
+            contextLabel: 'Exam Context', contextValue: activeExam?.examType,
+            onSubmit: (data) => {
+                if (isEdit) { setCreateType('section'); dispatch(updateSection({ id: editData._id, data })); }
+                else { setCreateType('section'); dispatch(createSection({ ...data, examType: activeExamId })); }
+            }
+        });
+    };
+    const openCreateChapter = (editData) => {
+        const isEdit = !!editData;
+        setModal({
+            open: true, icon: ScrollText, title: isEdit ? 'Edit Chapter' : 'Create Chapter',
+            fields: [
+                { name: 'chapterName', label: 'Chapter Heading', required: true, value: editData?.chapterName || '' },
+                { name: 'sequence', label: 'Order Index', type: 'number', required: true, value: editData?.sequence || '' }
+            ],
+            contextLabel: 'Section Context', contextValue: activeSection?.sectionName,
+            onSubmit: (data) => {
+                const payload = { ...data, sequence: Number(data.sequence) || 1 };
+                if (isEdit) { setCreateType('chapter'); dispatch(updateChapter({ id: editData._id, data: payload })); }
+                else { setCreateType('chapter'); dispatch(createChapter({ ...payload, examType: activeExamId, section: activeSectionId })); }
+            }
+        });
+    };
 
     const [qForm, setQForm] = useState({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' });
+    const [editingQuestionId, setEditingQuestionId] = useState(null);
+
+    const loadQuestionForEdit = (q) => {
+        setQForm({
+            questionText: q.questionText || '',
+            options: {
+                A: { text: q.options?.A?.text || '', traitMapping: q.options?.A?.traitMapping || 'NONE' },
+                B: { text: q.options?.B?.text || '', traitMapping: q.options?.B?.traitMapping || 'NONE' },
+                C: { text: q.options?.C?.text || '', traitMapping: q.options?.C?.traitMapping || 'NONE' },
+                D: { text: q.options?.D?.text || '', traitMapping: q.options?.D?.traitMapping || 'NONE' }
+            },
+            correctAnswer: q.correctAnswer || 'A'
+        });
+        setIsTraitBased(q.isTraitBased || false);
+        setEditingQuestionId(q._id);
+    };
+
+    const getChapterPair = (seq) => aptConfig?.careerPairs?.find(p => p.chapterSequence === seq);
+    const activePair = getChapterPair(activeChapter?.sequence);
+
+    const isAptitudeClass = (() => {
+        const cn = parseInt(activeExam?.className);
+        return !isNaN(cn) && cn > 5;
+    })();
+
+    useEffect(() => {
+        if (activeExamId && isAptitudeClass) setIsTraitBased(true);
+    }, [activeExamId, isAptitudeClass]);
+
     const handleQSubmit = (e) => {
         e.preventDefault();
         setCreateType('question');
 
         const payload = { ...qForm };
-        // Auto-map traits based on exact strict requirements (Option A->Career 1, etc.)
-        if (isTraitBased) {
-            payload.options.A.traitMapping = 'CAREER_1';
-            payload.options.B.traitMapping = 'CAREER_2';
-            payload.options.C.traitMapping = 'BOTH';
-            payload.options.D.traitMapping = 'NONE';
-        }
 
-        dispatch(createQuestion({ ...payload, isTraitBased, examType: activeExamId, section: activeSectionId, chapter: activeChapterId }));
+        if (editingQuestionId) {
+            dispatch(updateQuestion({ id: editingQuestionId, data: { ...payload, isTraitBased } }));
+        } else {
+            dispatch(createQuestion({ ...payload, isTraitBased, examType: activeExamId, section: activeSectionId, chapter: activeChapterId }));
+        }
     };
-    useEffect(() => { if (success && !showSuccessModal) setQForm({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' }); }, [success, showSuccessModal]);
+    const resetQForm = () => {
+        setQForm({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' });
+        setEditingQuestionId(null);
+        setIsTraitBased(false);
+    };
+    useEffect(() => { if (success && !showSuccessModal) resetQForm(); }, [success, showSuccessModal]);
 
     return (
         <div className="min-h-screen bg-slate-50/20 flex flex-col font-sans text-slate-600 antialiased selection:bg-indigo-600 selection:text-white">
@@ -371,7 +445,14 @@ const QuizSet = () => {
                 {!activeChapterId && viewMode === 'studio' ? (
                     <div className="space-y-12 animate-in fade-in duration-500">
                         {currentStep === 1 && (
-                            <CompactRow title="Step 01 / Category" typeLabel="EXAM" items={examTypes} activeId={activeExamId} onSelect={setActiveExamId} onAdd={openCreateExam} icon={Database} labelKey="examType" />
+                            <CompactRow
+                                title="Step 01 / Category" typeLabel="EXAM"
+                                items={examTypes} activeId={activeExamId}
+                                onSelect={setActiveExamId} onAdd={() => openCreateExam()}
+                                onEdit={openCreateExam}
+                                onDelete={(id) => { if (window.confirm('Delete this exam type? This will affect all related data.')) dispatch(deleteExamType(id)); }}
+                                icon={Database} labelKey="examType"
+                            />
                         )}
 
                         {activeExamId && currentStep === 2 && (
@@ -379,7 +460,14 @@ const QuizSet = () => {
                                 <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Category Selection
                                 </button>
-                                <CompactRow title="Step 02 / Territory" typeLabel="SECTION" items={filteredSections} activeId={activeSectionId} onSelect={setActiveSectionId} onAdd={openCreateSection} icon={Layers} labelKey="sectionName" />
+                                <CompactRow
+                                    title="Step 02 / Territory" typeLabel="SECTION"
+                                    items={filteredSections} activeId={activeSectionId}
+                                    onSelect={setActiveSectionId} onAdd={() => openCreateSection()}
+                                    onEdit={openCreateSection}
+                                    onDelete={(id) => { if (window.confirm('Delete this section? This will affect all related chapters.')) dispatch(deleteSection(id)); }}
+                                    icon={Layers} labelKey="sectionName"
+                                />
                             </div>
                         )}
 
@@ -388,7 +476,14 @@ const QuizSet = () => {
                                 <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Sections
                                 </button>
-                                <CompactRow title="Step 03 / Module" typeLabel="CHAPTER" items={filteredChapters} activeId={activeChapterId} onSelect={setActiveChapterId} onAdd={openCreateChapter} icon={ScrollText} labelKey="chapterName" />
+                                <CompactRow
+                                    title="Step 03 / Module" typeLabel="CHAPTER"
+                                    items={filteredChapters} activeId={activeChapterId}
+                                    onSelect={setActiveChapterId} onAdd={() => openCreateChapter()}
+                                    onEdit={openCreateChapter}
+                                    onDelete={(id) => { if (window.confirm('Delete this chapter? This will affect all related questions.')) dispatch(deleteChapter(id)); }}
+                                    icon={ScrollText} labelKey="chapterName"
+                                />
                             </div>
                         )}
                     </div>
@@ -403,9 +498,36 @@ const QuizSet = () => {
                                 <div className="grid grid-cols-12 gap-10 items-start">
                                     {/* Centered Form Panel */}
                                     <div className="col-span-12 lg:col-span-9 space-y-8 bg-white border border-slate-100 rounded-2xl p-10 shadow-sm">
-                                        <div className="flex items-center justify-between border-b border-slate-50 pb-8">
-                                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
-                                                <span className="text-indigo-600">{activeExam?.examType}</span> <ChevronRight size={10} /> <span className="text-indigo-600">{activeSection?.sectionName}</span> <ChevronRight size={10} /> <span className="text-slate-900 border-b-2 border-indigo-600 pb-0.5">{activeChapter?.chapterName}</span>
+                                        <div className="flex items-center justify-between border-b border-slate-50 pb-6">
+                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                                <select
+                                                    value={activeExamId}
+                                                    onChange={(e) => { setActiveExamId(e.target.value); setActiveSectionId(''); setActiveChapterId(''); }}
+                                                    className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
+                                                >
+                                                    <option value="">Select Exam</option>
+                                                    {examTypes.map(et => <option key={et._id} value={et._id}>{et.examType}</option>)}
+                                                </select>
+                                                <ChevronRight size={10} className="text-slate-300" />
+                                                <select
+                                                    value={activeSectionId}
+                                                    onChange={(e) => { setActiveSectionId(e.target.value); setActiveChapterId(''); }}
+                                                    className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
+                                                    disabled={!activeExamId}
+                                                >
+                                                    <option value="">Select Section</option>
+                                                    {filteredSections.map(s => <option key={s._id} value={s._id}>{s.sectionName}</option>)}
+                                                </select>
+                                                <ChevronRight size={10} className="text-slate-300" />
+                                                <select
+                                                    value={activeChapterId}
+                                                    onChange={(e) => setActiveChapterId(e.target.value)}
+                                                    className="px-3 py-1.5 bg-slate-900 text-white border border-slate-800 rounded-lg text-[10px] font-black outline-none cursor-pointer"
+                                                    disabled={!activeSectionId}
+                                                >
+                                                    <option value="">Select Chapter</option>
+                                                    {filteredChapters.map(c => <option key={c._id} value={c._id}>{c.chapterName}</option>)}
+                                                </select>
                                             </div>
                                             <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black border border-emerald-100">
                                                 SECURE NODE ACTIVE
@@ -418,15 +540,22 @@ const QuizSet = () => {
                                                     <h3 className="text-sm font-bold text-slate-800">Question Content</h3>
                                                     <p className="text-xs text-slate-500 mt-1">Compose the question stem.</p>
                                                 </div>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isTraitBased}
-                                                        onChange={(e) => setIsTraitBased(e.target.checked)}
-                                                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                                    />
-                                                    <span className="text-xs font-bold text-slate-700">Trait-Based (Career/Personality)</span>
-                                                </label>
+                                                <div className="flex items-center gap-3">
+                                                    {activeExamId && (
+                                                        <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${isAptitudeClass ? 'bg-violet-50 text-violet-600 border-violet-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                                            {isAptitudeClass ? 'CAREER APTITUDE' : 'IQ TEST'}
+                                                        </span>
+                                                    )}
+                                                    <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isTraitBased}
+                                                            onChange={(e) => setIsTraitBased(e.target.checked)}
+                                                            className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                                        />
+                                                        <span className="text-xs font-bold text-slate-700">Trait-Based</span>
+                                                    </label>
+                                                </div>
                                             </div>
                                             <SimpleEditor
                                                 value={qForm.questionText}
@@ -440,7 +569,7 @@ const QuizSet = () => {
                                                 </label>
                                                 <div className="bg-slate-50/50 p-2 rounded-2xl space-y-2 border border-slate-100">
                                                     {['A', 'B', 'C', 'D'].map(k => (
-                                                        <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${!isTraitBased && qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
+                                                        <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${!isTraitBased && qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : isTraitBased ? 'border-slate-100' : 'border-slate-100 hover:border-slate-200'}`}>
                                                             {!isTraitBased && (
                                                                 <div className="flex flex-col items-center gap-3 py-2 w-16 shrink-0 border-r border-slate-50">
                                                                     <span className={`text-sm font-black ${qForm.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
@@ -456,29 +585,50 @@ const QuizSet = () => {
                                                                     </button>
                                                                 </div>
                                                             )}
+                                                            {isTraitBased && (
+                                                                <div className="flex flex-col items-center gap-2 py-2 w-16 shrink-0 border-r border-slate-50">
+                                                                    <span className="text-sm font-black text-slate-400">{k}</span>
+                                                                    <div className={`px-1.5 py-1 rounded text-[7px] font-black uppercase tracking-wider text-center leading-tight ${qForm.options[k].traitMapping === 'CAREER_1' ? 'bg-blue-100 text-blue-700' : qForm.options[k].traitMapping === 'CAREER_2' ? 'bg-indigo-100 text-indigo-700' : qForm.options[k].traitMapping === 'BOTH' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-400'}`}>
+                                                                        {qForm.options[k].traitMapping === 'CAREER_1' ? 'Career 1' :
+                                                                         qForm.options[k].traitMapping === 'CAREER_2' ? 'Career 2' :
+                                                                         qForm.options[k].traitMapping === 'BOTH' ? 'Both +1' : 'None'}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                             <div className="flex-1 min-w-0 flex flex-col gap-2">
                                                                 <SimpleEditor value={qForm.options[k].text} onChange={(val) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], text: val } } }))} placeholder={`Response choice ${k}...`} minHeight="60px" />
 
                                                                 {isTraitBased && (
-                                                                    <div className="flex items-center mt-1">
-                                                                        {(() => {
-                                                                            const pair = aptConfig?.careerPairs?.find(p => p.chapterSequence === activeChapter?.sequence);
-                                                                            const c1 = pair?.career1 || 'First Career';
-                                                                            const c2 = pair?.career2 || 'Second Career';
-
-                                                                            let badgeText = '';
-                                                                            let badgeColor = '';
-                                                                            if (k === 'A') { badgeText = `Aura/Points → ${c1} (+1)`; badgeColor = 'bg-blue-50 text-blue-600 border-blue-200'; }
-                                                                            else if (k === 'B') { badgeText = `Aura/Points → ${c2} (+1)`; badgeColor = 'bg-indigo-50 text-indigo-600 border-indigo-200'; }
-                                                                            else if (k === 'C') { badgeText = `Aura/Points → BOTH: ${c1} & ${c2} (+1 each)`; badgeColor = 'bg-purple-50 text-purple-600 border-purple-200'; }
-                                                                            else if (k === 'D') { badgeText = `Does not award points.`; badgeColor = 'bg-slate-50 text-slate-500 border-slate-200'; }
-
-                                                                            return (
-                                                                                <span className={`text-[10px] font-bold uppercase tracking-wide px-3 py-1.5 rounded-md border ${badgeColor}`}>
-                                                                                    {badgeText}
-                                                                                </span>
-                                                                            );
-                                                                        })()}
+                                                                    <div className="flex flex-col gap-1.5 mt-2">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0 w-20">Trait Map</label>
+                                                                            <select
+                                                                                value={qForm.options[k].traitMapping || 'NONE'}
+                                                                                onChange={(e) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], traitMapping: e.target.value } } }))}
+                                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                                                                            >
+                                                                                <option value="NONE">No points awarded</option>
+                                                                                {activePair && (
+                                                                                    <>
+                                                                                        <option value="CAREER_1">+1 → {activePair.career1}</option>
+                                                                                        <option value="CAREER_2">+1 → {activePair.career2}</option>
+                                                                                        <option value="BOTH">+1 → {activePair.career1} &amp; {activePair.career2}</option>
+                                                                                    </>
+                                                                                )}
+                                                                                {!activePair && (
+                                                                                    <>
+                                                                                        <option value="CAREER_1">+1 → Career 1</option>
+                                                                                        <option value="CAREER_2">+1 → Career 2</option>
+                                                                                        <option value="BOTH">+1 → Both Careers</option>
+                                                                                    </>
+                                                                                )}
+                                                                            </select>
+                                                                        </div>
+                                                                        {qForm.options[k].traitMapping && qForm.options[k].traitMapping !== 'NONE' && (
+                                                                            <span className="text-[9px] font-bold text-violet-600 ml-24">
+                                                                                {qForm.options[k].traitMapping === 'BOTH' ? 'Awards 1 point to each career' : 'Awards 1 point'}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -493,7 +643,7 @@ const QuizSet = () => {
                                                     disabled={loading}
                                                     className="px-10 py-4 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center gap-4 shadow-xl shadow-slate-100 group"
                                                 >
-                                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Secure Progress <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {editingQuestionId ? 'Update Question' : 'Secure Progress'} <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                                 </button>
                                             </div>
                                         </form>
@@ -502,11 +652,19 @@ const QuizSet = () => {
                                     {/* Sidebar Bank */}
                                     <div className="hidden lg:col-span-3 lg:flex flex-col gap-8 sticky top-24">
                                         <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                                            {editingQuestionId && (
+                                                <button onClick={resetQForm} className="w-full mb-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all border border-amber-200">
+                                                    Cancel Editing
+                                                </button>
+                                            )}
                                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-4">Live Session Vault</h4>
                                             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                                                 {activeChapterQuestions.map((q, idx) => (
                                                     <div key={q._id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl group relative hover:bg-white hover:border-indigo-200 transition-all cursor-default">
-                                                        <button onClick={() => dispatch(deleteQuestion(q._id))} className="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
+                                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                            <button onClick={() => loadQuestionForEdit(q)} className="text-slate-300 hover:text-indigo-600"><Pencil size={12} /></button>
+                                                            <button onClick={() => dispatch(deleteQuestion(q._id))} className="text-slate-300 hover:text-rose-500"><Trash2 size={12} /></button>
+                                                        </div>
                                                         <p className="text-[10px] font-bold text-slate-700 line-clamp-2 italic" dangerouslySetInnerHTML={{ __html: q.questionText }} />
                                                         <div className="mt-3 flex items-center gap-2">
                                                             <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black">{q.correctAnswer}</div>
@@ -547,7 +705,10 @@ const QuizSet = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {activeChapterQuestions.map((q, idx) => (
                                         <div key={q._id} className="bg-white border border-slate-100 rounded-[32px] p-8 relative group hover:border-indigo-200 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
-                                            <button onClick={() => dispatch(deleteQuestion(q._id))} className="absolute top-8 right-8 p-2.5 bg-rose-50 text-rose-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-100"><Trash2 size={16} /></button>
+                                            <div className="absolute top-8 right-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={() => { loadQuestionForEdit(q); setViewMode('studio'); }} className="p-2.5 bg-indigo-50 text-indigo-500 rounded-xl hover:bg-indigo-100"><Pencil size={16} /></button>
+                                                <button onClick={() => dispatch(deleteQuestion(q._id))} className="p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100"><Trash2 size={16} /></button>
+                                            </div>
                                             <div className="flex items-center gap-3 mb-6">
                                                 <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs">#{idx + 1}</div>
                                                 <div className="h-px bg-slate-50 flex-1" />

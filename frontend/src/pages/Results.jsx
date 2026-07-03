@@ -72,19 +72,19 @@ const Results = () => {
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-2">
                                                         <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-slate-900" style={{ width: `${res.percentage}%` }} />
+                                                            <div className="h-full bg-slate-900" style={{ width: `${res.percentage || 0}%` }} />
                                                         </div>
                                                         <span className="text-xs font-black text-slate-900">{res.percentage}%</span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
-                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${res.status === 'pass'
+                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${res.status === 'PASSED'
                                                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                                     : 'bg-rose-50 text-rose-600 border-rose-100'
                                                     }`}>
-                                                    {res.status === 'pass' ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                                                    {res.status}
+                                                    {res.status === 'PASSED' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                                    {res.status === 'PASSED' ? 'PASSED' : res.status}
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5 text-right">

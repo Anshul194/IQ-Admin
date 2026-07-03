@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Assessment from './pages/Assessment';
 import StudentMaster from './pages/StudentMaster';
 import Results from './pages/Results';
+import ResultDetail from './pages/ResultDetail';
 import Certificates from './pages/Certificates';
 import { useSelector } from 'react-redux';
 
@@ -27,6 +28,10 @@ function App() {
                 <Route
                     path="/results"
                     element={user ? <Results user={user} /> : <Navigate to="/login" />}
+                />
+                <Route
+                    path="/results/:id"
+                    element={user ? <ResultDetail /> : <Navigate to="/login" />}
                 />
                 <Route
                     path="/certificates"

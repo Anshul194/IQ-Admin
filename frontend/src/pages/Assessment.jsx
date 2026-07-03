@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Brain, ArrowRight, ArrowLeft, Timer, CheckCircle,
     AlertCircle, X, Flag, Trash2, ChevronDown, ChevronUp,
-    LayoutGrid, List, Award, Download, Share2, RefreshCw
+    LayoutGrid, List, Award, Download, Share2, RefreshCw, FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { getQuizQuestions, submitAssessment, clearAssessment } from '../store/slices/assessmentSlice';
-import { downloadCertificate } from '../utils/api';
+import { downloadCertificate, downloadReport } from '../utils/api';
 
 const Assessment = ({ user }) => {
     const navigate = useNavigate();
@@ -18,7 +18,10 @@ const Assessment = ({ user }) => {
 
     // UI States
     const [isFinished, setIsFinished] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(1800);
+    const isJunior = parseInt(user?.grade) <= 6;
+    const maxTime = isJunior ? 3600 : 7200;
+    const [timeLeft, setTimeLeft] = useState(maxTime);
+    const [startTime, setStartTime] = useState(null);
     const [activeSection, setActiveSection] = useState(0);
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
     const [expandedSections, setExpandedSections] = useState(new Set([0]));
@@ -31,6 +34,7 @@ const Assessment = ({ user }) => {
 
     useEffect(() => {
         dispatch(getQuizQuestions(user?.grade || '1'));
+        setStartTime(Date.now());
         return () => dispatch(clearAssessment());
     }, [user, dispatch]);
 
@@ -108,8 +112,11 @@ const Assessment = ({ user }) => {
             };
         });
 
+        const timeTaken = Math.round((Date.now() - startTime) / 60000);
+
         const payload = {
             examId: examId,
+            timeTaken,
             answers: formattedAnswers
         };
 
@@ -120,7 +127,11 @@ const Assessment = ({ user }) => {
     if (error) return <div className="h-screen flex flex-col items-center justify-center bg-white p-6 text-center"><AlertCircle size={48} className="text-rose-500 mb-4" /><h2 className="text-2xl font-bold mb-2">Sync Error</h2><p className="text-slate-500 mb-6 max-w-sm">{error}</p><button onClick={() => window.location.reload()} className="px-10 py-3 bg-slate-900 text-white rounded font-bold">Retry Connection</button></div>;
 
     if (isFinished && lastResult) {
-        const isPassed = lastResult.status === 'pass';
+        const isPassed = lastResult.status === 'PASSED';
+        const areas = lastResult.areas || [];
+        const resultId = lastResult.resultId || lastResult._id;
+        const totalQ = lastResult.totalQuestions || 40;
+        const pct = lastResult.percentage ?? lastResult.totalPercentage ?? Math.round((lastResult.correctAnswers / totalQ) * 100);
         return (
             <MainLayout user={user} isTesting={true}>
                 <div className="h-full flex flex-col items-center justify-center p-6 bg-slate-50 overflow-y-auto">
@@ -132,7 +143,7 @@ const Assessment = ({ user }) => {
                                         <Award size={48} />
                                     </div>
                                     <h2 className="text-4xl font-black text-slate-900 leading-tight">Congratulations,<br />{user?.name}!</h2>
-                                    <p className="text-slate-600 font-medium">You have successfully cleared the {parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test'} with excellence.</p>
+                                    <p className="text-slate-600 font-medium">You have successfully cleared the {isJunior ? 'IQ TEST' : 'Career Test'} with excellence.</p>
                                     <div className="inline-block px-6 py-3 bg-emerald-500 text-white font-bold rounded-full text-xl shadow-lg">PASSED</div>
                                 </div>
                             ) : (
@@ -141,46 +152,71 @@ const Assessment = ({ user }) => {
                                         <RefreshCw size={48} />
                                     </div>
                                     <h2 className="text-4xl font-black text-slate-900 leading-tight">Keep Practicing,<br />{user?.name}</h2>
-                                    <p className="text-slate-600 font-medium">You were close! Re-review your weak areas in the {parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test'} and try again to unlock your certificate.</p>
+                                    <p className="text-slate-600 font-medium">You were close! Re-review your weak areas in the {isJunior ? 'IQ TEST' : 'Career Test'} and try again to unlock your certificate.</p>
                                     <div className="inline-block px-6 py-3 bg-slate-400 text-white font-bold rounded-full text-xl shadow-lg">RE-ATTEMPT</div>
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex-1 p-10 space-y-10">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Score Achieved</p>
-                                    <p className="text-3xl font-black text-slate-900">{lastResult.percentage}%</p>
+                        <div className="flex-1 p-10 space-y-6 overflow-y-auto max-h-[80vh]">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Score</p>
+                                    <p className="text-3xl font-black text-slate-900">{pct}%</p>
                                 </div>
-                                <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Items Correct</p>
-                                    <p className="text-3xl font-black text-slate-900">{lastResult.correctAnswersCount}/{lastResult.totalQuestions}</p>
+                                <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Correct</p>
+                                    <p className="text-3xl font-black text-slate-900">{lastResult.correctAnswers || lastResult.correctAnswersCount}/{totalQ}</p>
                                 </div>
+                                {isPassed && lastResult.iqScore && (
+                                    <div className="p-5 bg-indigo-50 rounded-xl border border-indigo-100 col-span-2">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">IQ Score</p>
+                                        <p className="text-3xl font-black text-indigo-600">{lastResult.iqScore}</p>
+                                    </div>
+                                )}
                             </div>
 
+                            {areas.length > 0 && (
+                                <div className="space-y-3">
+                                    <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Area-wise Breakdown</h3>
+                                    <div className="space-y-2">
+                                        {areas.map((area, i) => (
+                                            <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                <span className="text-xs font-bold text-slate-700">{area.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-1.5 w-20 bg-slate-200 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${area.percentage}%` }} />
+                                                    </div>
+                                                    <span className="text-xs font-black text-slate-900 w-8 text-right">{area.correctAnswers}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {isPassed && (
-                                <div className="space-y-4">
-                                    <h3 className="font-bold text-slate-900 flex items-center gap-2 underline decoration-indigo-600">Generated Credentials</h3>
-                                    <div className="border-2 border-dashed border-indigo-100 bg-indigo-50/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center group">
-                                        <Award size={40} className="text-indigo-600 mb-3 group-hover:scale-110 transition-transform" />
-                                        <p className="text-sm font-bold text-slate-900 mb-1">Official Merit Certificate</p>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-6">ID: CERT-{lastResult._id?.slice(-8)}</p>
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex gap-3">
                                         <button
-                                            onClick={() => downloadCertificate(lastResult._id)}
-                                            className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-lg font-bold text-sm hover:bg-slate-800 transition-all cursor-pointer"
+                                            onClick={() => downloadCertificate(resultId)}
+                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all"
                                         >
-                                            <Download size={16} /> Download PDF
+                                            <Download size={14} /> Certificate
+                                        </button>
+                                        <button
+                                            onClick={() => downloadReport(resultId)}
+                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition-all"
+                                        >
+                                            <FileText size={14} /> Report
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="flex gap-4 pt-4">
-                                <button onClick={() => navigate('/dashboard')} className="flex-1 py-4 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors">Portal Home</button>
-                                <button className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all">
-                                    <Share2 size={18} /> Share Report
-                                </button>
+                            <div className="flex gap-3 pt-2">
+                                <button onClick={() => navigate('/dashboard')} className="flex-1 py-3 border-2 border-slate-200 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-50 transition-colors">Dashboard</button>
+                                <button onClick={() => navigate('/results')} className="flex-1 py-3 border-2 border-slate-200 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-50 transition-colors">All Results</button>
                             </div>
                         </div>
                     </motion.div>
@@ -202,7 +238,7 @@ const Assessment = ({ user }) => {
                             <Brain size={18} />
                         </div>
                         <h1 className="text-sm font-black text-slate-900 uppercase tracking-tighter">
-                            {parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test'}
+                            {isJunior ? 'IQ TEST' : 'CAREER APTITUDE TEST'}
                         </h1>
                         <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200 uppercase tracking-wider">Timed Session</span>
                     </div>
