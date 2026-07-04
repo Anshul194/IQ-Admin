@@ -75,7 +75,7 @@ const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
     );
 };
 
-// --- Highlighted Action Row ---
+// --- Success Modal ---
 const SuccessModal = ({ isOpen, onClose, message, subMessage, buttonText = "Proceed to Next Step" }) => (
     <AnimatePresence>
         {isOpen && (
@@ -118,95 +118,204 @@ const SuccessModal = ({ isOpen, onClose, message, subMessage, buttonText = "Proc
     </AnimatePresence>
 );
 
-const CompactRow = ({ title, items, activeId, onSelect, onAdd, onEdit, onDelete, icon: Icon, labelKey, typeLabel }) => (
-    <div className="w-full space-y-4">
-        <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-slate-900 rounded-full" />
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">{title}</h4>
+// --- Compact sidebar list panel (Exam / Section / Chapter) ---
+const SidebarStep = ({ step, title, icon: Icon, currentLabel, placeholder, isCurrent, disabled, onClick }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-all rounded-xl border
+            ${disabled 
+                ? 'opacity-40 cursor-not-allowed border-transparent bg-transparent' 
+                : 'cursor-pointer border-transparent bg-transparent hover:bg-slate-50/60 hover:text-slate-900'
+            }
+            ${isCurrent && !disabled 
+                ? '!border-indigo-100 bg-indigo-50/40 shadow-sm shadow-indigo-100/10' 
+                : ''
+            }
+        `}
+    >
+        <div className={`p-2 rounded-lg shrink-0 transition-all ${isCurrent && !disabled ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200/50' : 'bg-slate-100 text-slate-400'}`}>
+            <Icon size={14} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className={`text-[8px] font-black uppercase tracking-widest ${isCurrent && !disabled ? 'text-indigo-500' : 'text-slate-400'}`}>{step} / {title}</p>
+            <p className={`text-xs font-bold truncate mt-0.5 ${currentLabel ? 'text-slate-800' : 'text-slate-300 italic'}`}>
+                {currentLabel || placeholder}
+            </p>
+        </div>
+        <ChevronRight size={12} className={isCurrent && !disabled ? 'text-indigo-400' : 'text-slate-200'} />
+    </button>
+);
+
+// --- Reusable question composer block (used for batch items and single edit) ---
+const QuestionBlock = ({
+    index, value, onTextChange, onOptionTextChange, onOptionTraitChange, onCorrectChange,
+    isTraitBased, activePair, onRemove, removable
+}) => (
+    <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4 relative">
+        {removable && (
+            <button
+                type="button"
+                onClick={onRemove}
+                className="absolute top-5 right-5 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                title="Remove this question"
+            >
+                <Trash2 size={16} />
+            </button>
+        )}
+
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black text-xs shrink-0">
+                {index}
+            </div>
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Question {index}</h4>
+        </div>
+
+        <SimpleEditor
+            value={value.questionText}
+            onChange={onTextChange}
+            placeholder="Enter your question here..."
+        />
+
+        <div className="space-y-2.5">
+            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Choice Grid
+            </label>
+            <div className="bg-slate-50/50 p-1.5 rounded-2xl space-y-1 border border-slate-100">
+                {['A', 'B', 'C', 'D'].map(k => (
+                    <div key={k} className={`flex items-start gap-2.5 bg-white p-2 rounded-xl border transition-all ${!isTraitBased && value.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50/50 bg-gradient-to-r from-indigo-50/20 to-transparent' : isTraitBased ? 'border-slate-100' : 'border-slate-100 hover:border-slate-200'}`}>
+                        {!isTraitBased && (
+                            <div className="flex flex-col items-center gap-1.5 py-1 w-12 shrink-0 border-r border-slate-50">
+                                <span className={`text-xs font-black ${value.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => onCorrectChange(k)}
+                                    className={`w-6 h-6 rounded-md transition-all border-2 flex items-center justify-center ${value.correctAnswer === k
+                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                                        : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
+                                        }`}
+                                >
+                                    <Check size={12} strokeWidth={4} />
+                                </button>
+                            </div>
+                        )}
+                        {isTraitBased && (
+                            <div className="flex flex-col items-center gap-1 py-1 w-12 shrink-0 border-r border-slate-50">
+                                <span className="text-xs font-black text-slate-400">{k}</span>
+                                <div className={`px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-wider text-center leading-tight ${value.options[k].traitMapping === 'CAREER_1' ? 'bg-blue-100 text-blue-700' : value.options[k].traitMapping === 'CAREER_2' ? 'bg-indigo-100 text-indigo-700' : value.options[k].traitMapping === 'BOTH' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-400'}`}>
+                                    {value.options[k].traitMapping === 'CAREER_1' ? 'Car.1' :
+                                     value.options[k].traitMapping === 'CAREER_2' ? 'Car.2' :
+                                     value.options[k].traitMapping === 'BOTH' ? 'Both' : 'None'}
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                            <SimpleEditor
+                                value={value.options[k].text}
+                                onChange={(val) => onOptionTextChange(k, val)}
+                                placeholder={`Response choice ${k}...`}
+                                minHeight="60px"
+                            />
+
+                            {isTraitBased && (
+                                <div className="flex flex-col gap-1.5 mt-2">
+                                    <div className="flex items-center gap-4">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0 w-20">Trait Map</label>
+                                        <select
+                                            value={value.options[k].traitMapping || 'NONE'}
+                                            onChange={(e) => onOptionTraitChange(k, e.target.value)}
+                                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                                        >
+                                            <option value="NONE">No points awarded</option>
+                                            {activePair && (
+                                                <>
+                                                    <option value="CAREER_1">+1 → {activePair.career1}</option>
+                                                    <option value="CAREER_2">+1 → {activePair.career2}</option>
+                                                    <option value="BOTH">+1 → {activePair.career1} &amp; {activePair.career2}</option>
+                                                </>
+                                            )}
+                                            {!activePair && (
+                                                <>
+                                                    <option value="CAREER_1">+1 → Career 1</option>
+                                                    <option value="CAREER_2">+1 → Career 2</option>
+                                                    <option value="BOTH">+1 → Both Careers</option>
+                                                </>
+                                            )}
+                                        </select>
+                                    </div>
+                                    {value.options[k].traitMapping && value.options[k].traitMapping !== 'NONE' && (
+                                        <span className="text-[9px] font-bold text-violet-600 ml-24">
+                                            {value.options[k].traitMapping === 'BOTH' ? 'Awards 1 point to each career' : 'Awards 1 point'}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// --- Generic data table used to browse Exams / Sections / Chapters on the right panel ---
+const DataTable = ({ title, addLabel, onAdd, items, columns, onView, onEdit, onDelete, emptyText, contextBar }) => (
+    <div className="space-y-3.5 animate-in fade-in duration-300">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+                <div className="w-1 h-5 bg-slate-900 rounded-full" />
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">{title}</h3>
             </div>
             <button
                 onClick={onAdd}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md shadow-indigo-100"
             >
-                <PlusSquare size={14} /> New {typeLabel}
+                <PlusSquare size={12} /> {addLabel}
             </button>
         </div>
 
-        <div className="bg-white border border-slate-100 rounded-[24px] overflow-hidden shadow-sm">
+        {contextBar}
+
+        <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                     <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-50">
-                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Class</th>
-                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">{typeLabel} Name</th>
-                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Metadata</th>
-                            <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Registered</th>
-                            <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                        <tr className="bg-gradient-to-r from-slate-50 to-indigo-50/20 border-b border-slate-100">
+                            {columns.map(col => (
+                                <th key={col.header} className="px-4 py-2.5 text-left text-[8px] font-black text-slate-400 uppercase tracking-widest">{col.header}</th>
+                            ))}
+                            <th className="px-4 py-2.5 text-right text-[8px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                         {items.length > 0 ? items.map((item, idx) => (
-                            <tr
-                                key={item._id || idx}
-                                className={`hover:bg-slate-50/80 transition-colors group ${activeId === item._id ? 'bg-indigo-50/40' : ''}`}
-                            >
-                                <td className="px-6 py-4 whitespace-nowrap" onClick={() => onSelect(item._id)}>
-                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${activeId === item._id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                        {item.className || 'N/A'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4" onClick={() => onSelect(item._id)}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-lg ${activeId === item._id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
-                                            <Icon size={14} />
-                                        </div>
-                                        <span className={`text-xs font-bold ${activeId === item._id ? 'text-indigo-600' : 'text-slate-700'}`}>
-                                            {item[labelKey] || 'Untitled'}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="text-[10px] font-semibold text-slate-400 uppercase">{item.language || item.sequence || 'Standard'}</span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
-                                        <Calendar size={12} strokeWidth={2.5} />
-                                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '---'}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-right">
+                            <tr key={item._id || idx} className="hover:bg-slate-50/80 transition-colors group cursor-pointer" onClick={() => onView(item)}>
+                                {columns.map(col => (
+                                    <td key={col.header} className="px-4 py-2.5 whitespace-nowrap">
+                                        {col.render(item)}
+                                    </td>
+                                ))}
+                                <td className="px-4 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onEdit?.(item); }}
-                                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                            title="Edit"
-                                        >
-                                            <Pencil size={14} />
+                                        <button onClick={(e) => { e.stopPropagation(); onView(item); }} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="View">
+                                            <Eye size={12} />
                                         </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onDelete?.(item._id); }}
-                                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                                            title="Delete"
-                                        >
-                                            <Trash2 size={14} />
+                                        <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
+                                            <Pencil size={12} />
                                         </button>
-                                        <button
-                                            onClick={() => onSelect(item._id)}
-                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeId === item._id
-                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100'
-                                                : 'bg-slate-900 text-white hover:bg-indigo-600'
-                                                }`}
-                                        >
-                                            {activeId === item._id ? 'Active' : 'Select'}
+                                        <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete">
+                                            <Trash2 size={12} />
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); onView(item); }} className="px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-900 text-white hover:bg-indigo-600 transition-all">
+                                            View
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan="5" className="px-6 py-20 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">
-                                    No node records available in this sequence
+                                <td colSpan={columns.length + 1} className="px-6 py-20 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">
+                                    {emptyText}
                                 </td>
                             </tr>
                         )}
@@ -217,19 +326,30 @@ const CompactRow = ({ title, items, activeId, onSelect, onAdd, onEdit, onDelete,
     </div>
 );
 
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '---';
+
+const makeEmptyOption = () => ({ text: '', traitMapping: 'NONE' });
+const makeEmptyQuestion = () => ({
+    localId: `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    questionText: '',
+    options: { A: makeEmptyOption(), B: makeEmptyOption(), C: makeEmptyOption(), D: makeEmptyOption() },
+    correctAnswer: 'A'
+});
+
 const QuizSet = () => {
     const dispatch = useDispatch();
     const { examTypes, sections, chapters, questions, loading, success, lastCreatedId } = useSelector(state => state.quiz);
 
-    const [viewMode, setViewMode] = useState('studio');
+    const [viewMode, setViewMode] = useState('studio'); // 'studio' | 'bank'
     const [activeExamId, setActiveExamId] = useState('');
     const [activeSectionId, setActiveSectionId] = useState('');
     const [activeChapterId, setActiveChapterId] = useState('');
+    const [expandedQuestions, setExpandedQuestions] = useState({});
     const [createType, setCreateType] = useState('exam');
     const [isTraitBased, setIsTraitBased] = useState(false);
     const [modal, setModal] = useState({ open: false, title: '', fields: [], icon: null, onSubmit: null, contextLabel: '', contextValue: '' });
     const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [successPrompt, setSuccessPrompt] = useState({ title: '', nextStep: '' });
+    const [successPrompt, setSuccessPrompt] = useState({ title: '', nextStep: '', buttonText: '' });
 
     // Dynamic Aptitude Config Fetching
     const [aptConfig, setAptConfig] = useState(null);
@@ -259,8 +379,14 @@ const QuizSet = () => {
     const activeChapter = useMemo(() => chapters.find(c => (c._id || c.id) === activeChapterId), [chapters, activeChapterId]);
     const activeChapterQuestions = useMemo(() => questions.filter(q => (q.chapter?._id || q.chapter) === activeChapterId), [questions, activeChapterId]);
 
+    // Selecting a level resets deeper levels
+    const selectExam = (id) => { setActiveExamId(id); setActiveSectionId(''); setActiveChapterId(''); };
+    const selectSection = (id) => { setActiveSectionId(id); setActiveChapterId(''); };
+    const selectChapter = (id) => setActiveChapterId(id);
+
+    // --- Exam / Section / Chapter creation (still via quick modal, triggered from sidebar) ---
     useEffect(() => {
-        if (success && lastCreatedId && createType) {
+        if (success && lastCreatedId && (createType === 'exam' || createType === 'section' || createType === 'chapter')) {
             let title = '';
             let nextStep = '';
 
@@ -275,17 +401,10 @@ const QuizSet = () => {
             } else if (createType === 'chapter') {
                 setActiveChapterId(lastCreatedId);
                 title = 'Chapter Established';
-                nextStep = 'Architecture complete! You can now start adding core questions to this chapter.';
-            } else if (createType === 'question') {
-                title = 'Question Secured';
-                nextStep = 'Node successfully added to the vault. Continue adding more or switch to records view.';
+                nextStep = 'Architecture complete! You can now start adding questions to this chapter.';
             }
 
-            setSuccessPrompt({
-                title,
-                nextStep,
-                buttonText: createType === 'question' ? 'Add Another Question' : 'Proceed to Next Step'
-            });
+            setSuccessPrompt({ title, nextStep, buttonText: 'Proceed to Next Step' });
             setShowSuccessModal(true);
             setModal(prev => ({ ...prev, open: false }));
             setCreateType(null);
@@ -295,14 +414,6 @@ const QuizSet = () => {
     const handleCloseSuccess = () => {
         setShowSuccessModal(false);
         dispatch(resetQuizState());
-    };
-
-    const currentStep = !activeExamId ? 1 : !activeSectionId ? 2 : !activeChapterId ? 3 : 4;
-
-    const goBack = () => {
-        if (activeChapterId) setActiveChapterId('');
-        else if (activeSectionId) setActiveSectionId('');
-        else if (activeExamId) setActiveExamId('');
     };
 
     const openCreateExam = (editData) => {
@@ -349,11 +460,22 @@ const QuizSet = () => {
         });
     };
 
-    const [qForm, setQForm] = useState({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' });
-    const [editingQuestionId, setEditingQuestionId] = useState(null);
+    // --- Batch question composer state ---
+    const [batch, setBatch] = useState([makeEmptyQuestion()]);
+    const [batchSaving, setBatchSaving] = useState(false);
+    const [editForm, setEditForm] = useState(null); // { _id, questionText, options, correctAnswer }
+
+    const addBlock = () => setBatch(prev => [...prev, makeEmptyQuestion()]);
+    const removeBlock = (localId) => setBatch(prev => prev.length > 1 ? prev.filter(q => q.localId !== localId) : prev);
+    const updateBlockField = (localId, field, val) => setBatch(prev => prev.map(q => q.localId === localId ? { ...q, [field]: val } : q));
+    const updateBlockOption = (localId, key, field, val) => setBatch(prev => prev.map(q => q.localId === localId
+        ? { ...q, options: { ...q.options, [key]: { ...q.options[key], [field]: val } } }
+        : q));
+    const resetBatch = () => setBatch([makeEmptyQuestion()]);
 
     const loadQuestionForEdit = (q) => {
-        setQForm({
+        setEditForm({
+            _id: q._id,
             questionText: q.questionText || '',
             options: {
                 A: { text: q.options?.A?.text || '', traitMapping: q.options?.A?.traitMapping || 'NONE' },
@@ -364,8 +486,14 @@ const QuizSet = () => {
             correctAnswer: q.correctAnswer || 'A'
         });
         setIsTraitBased(q.isTraitBased || false);
-        setEditingQuestionId(q._id);
+        setViewMode('studio');
     };
+    const cancelEdit = () => {
+        setEditForm(null);
+        setViewMode('bank');
+    };
+    const updateEditField = (field, val) => setEditForm(prev => ({ ...prev, [field]: val }));
+    const updateEditOption = (key, field, val) => setEditForm(prev => ({ ...prev, options: { ...prev.options, [key]: { ...prev.options[key], [field]: val } } }));
 
     const getChapterPair = (seq) => aptConfig?.careerPairs?.find(p => p.chapterSequence === seq);
     const activePair = getChapterPair(activeChapter?.sequence);
@@ -379,27 +507,66 @@ const QuizSet = () => {
         if (activeExamId && isAptitudeClass) setIsTraitBased(true);
     }, [activeExamId, isAptitudeClass]);
 
-    const handleQSubmit = (e) => {
+    // Whenever the active chapter changes, reset the composer and always land on the
+    // Question List first — the editor is only reached deliberately via "Add Question".
+    useEffect(() => {
+        resetBatch();
+        setEditForm(null);
+        setViewMode('bank');
+        setExpandedQuestions({});
+    }, [activeChapterId]);
+
+    const openComposerForNew = () => {
+        setEditForm(null);
+        resetBatch();
+        setViewMode('studio');
+    };
+
+    const handleSaveAll = async (e) => {
         e.preventDefault();
-        setCreateType('question');
-
-        const payload = { ...qForm };
-
-        if (editingQuestionId) {
-            dispatch(updateQuestion({ id: editingQuestionId, data: { ...payload, isTraitBased } }));
-        } else {
-            dispatch(createQuestion({ ...payload, isTraitBased, examType: activeExamId, section: activeSectionId, chapter: activeChapterId }));
+        const validBatch = batch.filter(q => q.questionText.trim());
+        if (!validBatch.length) return;
+        setBatchSaving(true);
+        try {
+            await Promise.all(validBatch.map(q => dispatch(createQuestion({
+                questionText: q.questionText,
+                options: q.options,
+                correctAnswer: q.correctAnswer,
+                isTraitBased,
+                examType: activeExamId,
+                section: activeSectionId,
+                chapter: activeChapterId
+            }))));
+            resetBatch();
+            setSuccessPrompt({
+                title: `${validBatch.length} Question${validBatch.length > 1 ? 's' : ''} Secured`,
+                nextStep: 'All questions have been added to the vault. Continue adding more whenever you\'re ready.',
+                buttonText: 'View Question List'
+            });
+            setShowSuccessModal(true);
+            setViewMode('bank');
+        } finally {
+            setBatchSaving(false);
         }
     };
-    const resetQForm = () => {
-        setQForm({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' });
-        setEditingQuestionId(null);
-        setIsTraitBased(false);
+
+    const handleUpdateQuestion = (e) => {
+        e.preventDefault();
+        dispatch(updateQuestion({
+            id: editForm._id,
+            data: {
+                questionText: editForm.questionText,
+                options: editForm.options,
+                correctAnswer: editForm.correctAnswer,
+                isTraitBased
+            }
+        }));
+        setEditForm(null);
+        setViewMode('bank');
     };
-    useEffect(() => { if (success && !showSuccessModal) resetQForm(); }, [success, showSuccessModal]);
 
     return (
-        <div className="min-h-screen bg-slate-50/20 flex flex-col font-sans text-slate-600 antialiased selection:bg-indigo-600 selection:text-white">
+        <div className="min-h-screen bg-slate-100/70 flex flex-col font-sans text-slate-600 antialiased selection:bg-indigo-600 selection:text-white">
 
             <SuccessModal
                 isOpen={showSuccessModal}
@@ -409,327 +576,456 @@ const QuizSet = () => {
                 buttonText={successPrompt.buttonText}
             />
 
-            {/* Clean Header */}
-            <header className="sticky top-0 z-[50] bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-3">
-                <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-indigo-100"><LayoutPanelLeft size={16} /></div>
-                        <h1 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Quiz Studio</h1>
-                    </div>
+            <main className="flex-1 w-full max-w-[1500px] mx-auto py-4 px-4">
+                <div className="grid grid-cols-12 gap-4 items-start">
 
-                    <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-lg p-1">
-                        {[
-                            { label: 'Exam', val: activeExam?.examType, active: activeExamId, reset: () => { setActiveExamId(''); setActiveSectionId(''); setActiveChapterId(''); } },
-                            { label: 'Section', val: activeSection?.sectionName, active: activeSectionId, reset: () => { setActiveSectionId(''); setActiveChapterId(''); } },
-                            { label: 'Chapter', val: activeChapter?.chapterName, active: activeChapterId, reset: () => { setActiveChapterId(''); } }
-                        ].map((s, idx) => (
-                            <React.Fragment key={idx}>
-                                <button onClick={s.active ? s.reset : undefined} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${s.active ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 opacity-50'}`}>
-                                    {s.val || s.label}
-                                </button>
-                                {idx < 2 && <span className="text-slate-200 text-[10px]">/</span>}
-                            </React.Fragment>
-                        ))}
-                    </div>
+                    {/* Persistent left navigation panel */}
+                    <aside className="col-span-12 lg:col-span-3 lg:sticky lg:top-0 bg-white border border-slate-100 rounded-3xl p-3.5 space-y-2 shadow-sm shadow-slate-100/30">
+                        <SidebarStep
+                            step="01" title="Exam" icon={Database}
+                            currentLabel={activeExam?.examType}
+                            placeholder="No exam selected"
+                            isCurrent={!activeExamId}
+                            onClick={() => { setActiveExamId(''); setActiveSectionId(''); setActiveChapterId(''); }}
+                        />
+                        <SidebarStep
+                            step="02" title="Section" icon={Layers}
+                            currentLabel={activeSection?.sectionName}
+                            placeholder={activeExamId ? 'No section selected' : 'Select an exam first'}
+                            isCurrent={!!activeExamId && !activeSectionId}
+                            disabled={!activeExamId}
+                            onClick={() => { setActiveSectionId(''); setActiveChapterId(''); }}
+                        />
+                        <SidebarStep
+                            step="03" title="Chapter" icon={ScrollText}
+                            currentLabel={activeChapter?.chapterName}
+                            placeholder={activeSectionId ? 'No chapter selected' : 'Select a section first'}
+                            isCurrent={!!activeSectionId && !activeChapterId}
+                            disabled={!activeSectionId}
+                            onClick={() => setActiveChapterId('')}
+                        />
+                    </aside>
 
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => setViewMode(viewMode === 'bank' ? 'studio' : 'bank')} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-all">
-                            {viewMode === 'bank' ? <Sliders size={14} /> : <ListChecks size={14} />} {viewMode === 'bank' ? 'EDITOR' : 'QUESTION LIST'}
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            <main className="flex-1 w-full max-w-[1400px] mx-auto py-10 px-8">
-
-                {!activeChapterId && viewMode === 'studio' ? (
-                    <div className="space-y-12 animate-in fade-in duration-500">
-                        {currentStep === 1 && (
-                            <CompactRow
-                                title="Step 01 / Category" typeLabel="EXAM"
-                                items={examTypes} activeId={activeExamId}
-                                onSelect={setActiveExamId} onAdd={() => openCreateExam()}
+                    {/* Main working panel */}
+                    <div className="col-span-12 lg:col-span-9 space-y-5">
+                        {!activeExamId ? (
+                            <DataTable
+                                title="All Exams"
+                                addLabel="New Exam"
+                                onAdd={() => openCreateExam()}
+                                items={examTypes}
+                                onView={(item) => selectExam(item._id)}
                                 onEdit={openCreateExam}
                                 onDelete={(id) => { if (window.confirm('Delete this exam type? This will affect all related data.')) dispatch(deleteExamType(id)); }}
-                                icon={Database} labelKey="examType"
+                                emptyText="No exams registered yet — create your first one"
+                                columns={[
+                                    { header: 'Class', render: item => <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase bg-slate-100 text-slate-500">{item.className || 'N/A'}</span> },
+                                    { header: 'Exam Name', render: item => (
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-slate-50 text-slate-400"><Database size={14} /></div>
+                                            <span className="text-xs font-bold text-slate-700">{item.examType || 'Untitled'}</span>
+                                        </div>
+                                    ) },
+                                    { header: 'Language', render: item => <span className="text-[10px] font-semibold text-slate-400 uppercase">{item.language || 'Standard'}</span> },
+                                    { header: 'Registered', render: item => (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                            <Calendar size={12} strokeWidth={2.5} /> {fmtDate(item.createdAt)}
+                                        </div>
+                                    ) }
+                                ]}
                             />
-                        )}
+                        ) : !activeSectionId ? (
+                            <DataTable
+                                title="Sections"
+                                addLabel="New Section"
+                                onAdd={() => openCreateSection()}
+                                items={filteredSections}
+                                onView={(item) => selectSection(item._id)}
+                                onEdit={openCreateSection}
+                                onDelete={(id) => { if (window.confirm('Delete this section? This will affect all related chapters.')) dispatch(deleteSection(id)); }}
+                                emptyText="No sections yet for this exam — create one to continue"
+                                contextBar={
+                                    <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-indigo-50/60 border border-indigo-100 rounded-xl">
+                                        <span className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest shrink-0">
+                                            <Database size={12} /> Managing sections for:
+                                        </span>
+                                        <select
+                                            value={activeExamId}
+                                            onChange={(e) => selectExam(e.target.value)}
+                                            className="px-3 py-1.5 bg-white border border-indigo-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
+                                        >
+                                            {examTypes.map(et => <option key={et._id} value={et._id}>{et.examType}</option>)}
+                                        </select>
+                                        <span className="text-[10px] font-bold text-indigo-400 ml-auto">
+                                            {filteredSections.length} section{filteredSections.length !== 1 ? 's' : ''} created so far — add as many as this exam needs
+                                        </span>
+                                    </div>
+                                }
+                                columns={[
+                                    { header: 'Section Name', render: item => (
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-slate-50 text-slate-400"><Layers size={14} /></div>
+                                            <span className="text-xs font-bold text-slate-700">{item.sectionName || 'Untitled'}</span>
+                                        </div>
+                                    ) },
+                                    { header: 'Chapters', render: item => {
+                                        const count = chapters.filter(c => (c.section?._id || c.section) === item._id).length;
+                                        return <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">{count} chapter{count !== 1 ? 's' : ''}</span>;
+                                    } },
+                                    { header: 'Registered', render: item => (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                            <Calendar size={12} strokeWidth={2.5} /> {fmtDate(item.createdAt)}
+                                        </div>
+                                    ) }
+                                ]}
+                            />
+                        ) : !activeChapterId ? (
+                            <DataTable
+                                title="Chapters"
+                                addLabel="New Chapter"
+                                onAdd={() => openCreateChapter()}
+                                items={filteredChapters}
+                                onView={(item) => selectChapter(item._id)}
+                                onEdit={openCreateChapter}
+                                onDelete={(id) => { if (window.confirm('Delete this chapter? This will affect all related questions.')) dispatch(deleteChapter(id)); }}
+                                emptyText="No chapters yet for this section — create one to add questions"
+                                contextBar={
+                                    <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-indigo-50/60 border border-indigo-100 rounded-xl">
+                                        <span className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest shrink-0">
+                                            <ScrollText size={12} /> Creating chapters for:
+                                        </span>
+                                        <select
+                                            value={activeExamId}
+                                            onChange={(e) => selectExam(e.target.value)}
+                                            className="px-3 py-1.5 bg-white border border-indigo-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
+                                        >
+                                            {examTypes.map(et => <option key={et._id} value={et._id}>{et.examType}</option>)}
+                                        </select>
+                                        <ChevronRight size={10} className="text-indigo-300" />
+                                        <select
+                                            value={activeSectionId}
+                                            onChange={(e) => selectSection(e.target.value)}
+                                            className="px-3 py-1.5 bg-white border border-indigo-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
+                                        >
+                                            <option value="">Select Section</option>
+                                            {filteredSections.map(s => <option key={s._id} value={s._id}>{s.sectionName}</option>)}
+                                        </select>
+                                        <span className="text-[10px] font-bold text-indigo-400 ml-auto">
+                                            Pick any section above to manage its chapters — no need to go back
+                                        </span>
+                                    </div>
+                                }
+                                columns={[
+                                    { header: 'Chapter Name', render: item => (
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-slate-50 text-slate-400"><ScrollText size={14} /></div>
+                                            <span className="text-xs font-bold text-slate-700">{item.chapterName || 'Untitled'}</span>
+                                        </div>
+                                    ) },
+                                    { header: 'Order', render: item => <span className="text-[10px] font-black text-slate-400">#{item.sequence || '-'}</span> },
+                                    { header: 'Questions', render: item => {
+                                        const count = questions.filter(q => (q.chapter?._id || q.chapter) === item._id).length;
+                                        return <span className="text-[10px] font-black text-violet-600 bg-violet-50 px-2.5 py-1 rounded-lg">{count} question{count !== 1 ? 's' : ''}</span>;
+                                    } },
+                                    { header: 'Registered', render: item => (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                            <Calendar size={12} strokeWidth={2.5} /> {fmtDate(item.createdAt)}
+                                        </div>
+                                    ) }
+                                ]}
+                            />
+                        ) : (
+                            <>
+                                {/* Context switcher: pick which exam / section / chapter you're working on */}
+                                <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-slate-50 via-white to-slate-50/50 border border-slate-100 rounded-xl px-4 py-2.5 shadow-sm">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0">Working on:</span>
+                                    <select
+                                        value={activeExamId}
+                                        onChange={(e) => selectExam(e.target.value)}
+                                        className="px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-black text-indigo-600 outline-none cursor-pointer"
+                                    >
+                                        <option value="">Select Exam</option>
+                                        {examTypes.map(et => <option key={et._id} value={et._id}>{et.examType}</option>)}
+                                    </select>
+                                    <ChevronRight size={8} className="text-slate-300 animate-pulse" />
+                                    <select
+                                        value={activeSectionId}
+                                        onChange={(e) => selectSection(e.target.value)}
+                                        className="px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-black text-indigo-600 outline-none cursor-pointer"
+                                        disabled={!activeExamId}
+                                    >
+                                        <option value="">Select Section</option>
+                                        {filteredSections.map(s => <option key={s._id} value={s._id}>{s.sectionName}</option>)}
+                                    </select>
+                                    <ChevronRight size={8} className="text-slate-300 animate-pulse" />
+                                    <select
+                                        value={activeChapterId}
+                                        onChange={(e) => selectChapter(e.target.value)}
+                                        className="px-2 py-1 bg-slate-900 text-white border border-slate-800 rounded-lg text-[9px] font-black outline-none cursor-pointer"
+                                        disabled={!activeSectionId}
+                                    >
+                                        <option value="">Select Chapter</option>
+                                        {filteredChapters.map(c => <option key={c._id} value={c._id}>{c.chapterName}</option>)}
+                                    </select>
+                                </div>
 
-                        {activeExamId && currentStep === 2 && (
-                            <div className="space-y-6">
-                                <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
-                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Category Selection
-                                </button>
-                                <CompactRow
-                                    title="Step 02 / Territory" typeLabel="SECTION"
-                                    items={filteredSections} activeId={activeSectionId}
-                                    onSelect={setActiveSectionId} onAdd={() => openCreateSection()}
-                                    onEdit={openCreateSection}
-                                    onDelete={(id) => { if (window.confirm('Delete this section? This will affect all related chapters.')) dispatch(deleteSection(id)); }}
-                                    icon={Layers} labelKey="sectionName"
-                                />
-                            </div>
-                        )}
+                                {/* Tab switcher: Question List <-> Editor */}
+                                <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-lg p-0.5 w-fit">
+                                    <button
+                                        onClick={() => setViewMode('bank')}
+                                        className={`px-4 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            viewMode === 'bank'
+                                                ? 'bg-white text-indigo-600 shadow-sm'
+                                                : 'text-slate-400 hover:text-slate-600'
+                                        }`}
+                                    >
+                                        Question List
+                                    </button>
+                                    <button
+                                        onClick={() => { if (viewMode !== 'studio') openComposerForNew(); }}
+                                        className={`px-4 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            viewMode === 'studio'
+                                                ? 'bg-white text-indigo-600 shadow-sm'
+                                                : 'text-slate-400 hover:text-slate-600'
+                                        }`}
+                                    >
+                                        Editor
+                                    </button>
+                                </div>
 
-                        {activeSectionId && currentStep === 3 && (
-                            <div className="space-y-6">
-                                <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
-                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Sections
-                                </button>
-                                <CompactRow
-                                    title="Step 03 / Module" typeLabel="CHAPTER"
-                                    items={filteredChapters} activeId={activeChapterId}
-                                    onSelect={setActiveChapterId} onAdd={() => openCreateChapter()}
-                                    onEdit={openCreateChapter}
-                                    onDelete={(id) => { if (window.confirm('Delete this chapter? This will affect all related questions.')) dispatch(deleteChapter(id)); }}
-                                    icon={ScrollText} labelKey="chapterName"
-                                />
-                            </div>
+                            <AnimatePresence mode="wait">
+                                {viewMode === 'bank' ? (
+                                    <motion.div key="bank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3.5 pb-24">
+                                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                            <div>
+                                                <h2 className="text-xl font-black text-slate-900 tracking-tight">Question List</h2>
+                                                <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-[0.2em]">{activeChapter?.chapterName}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2.5">
+                                                {activeChapterQuestions.length > 0 && (
+                                                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 uppercase tracking-widest">{activeChapterQuestions.length} VERIFIED QUESTIONS</span>
+                                                )}
+                                                <button
+                                                    onClick={openComposerForNew}
+                                                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md shadow-indigo-100"
+                                                >
+                                                    <PlusCircle size={12} /> Add Question
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {activeChapterQuestions.length === 0 ? (
+                                            <div className="py-16 flex flex-col items-center justify-center text-center bg-white border border-dashed border-slate-200 rounded-[24px]">
+                                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4 animate-pulse">
+                                                    <FileQuestion size={22} />
+                                                </div>
+                                                <h3 className="text-sm font-black text-slate-900 tracking-tight">No questions yet</h3>
+                                                <p className="text-[10px] font-bold text-slate-400 mt-1 max-w-xs leading-relaxed">
+                                                    This chapter is empty. Add your first question to start building the quiz.
+                                                </p>
+                                                <button
+                                                    onClick={openComposerForNew}
+                                                    className="mt-6 flex items-center gap-1.5 px-5 py-2.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-100"
+                                                >
+                                                    <PlusCircle size={14} /> Add Question
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {activeChapterQuestions.map((q, idx) => {
+                                                    const isExpanded = !!expandedQuestions[q._id];
+                                                    return (
+                                                        <div 
+                                                            key={q._id} 
+                                                            className={`border rounded-xl overflow-hidden transition-all duration-300 ${
+                                                                isExpanded 
+                                                                    ? 'bg-gradient-to-br from-indigo-50/20 via-white to-violet-50/10 border-indigo-200 shadow-md shadow-indigo-100/5' 
+                                                                    : 'bg-white border-slate-100 hover:border-indigo-100 shadow-sm hover:shadow-md hover:shadow-slate-100/40'
+                                                            }`}
+                                                        >
+                                                            {/* Accordion Header */}
+                                                            <div 
+                                                                onClick={() => setExpandedQuestions(prev => ({ ...prev, [q._id]: !prev[q._id] }))}
+                                                                className="flex items-center justify-between py-2.5 px-3.5 cursor-pointer hover:bg-slate-50/30 transition-colors"
+                                                            >
+                                                                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                                                                    <div className={`w-7 h-7 rounded-md flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
+                                                                        isExpanded ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100/30' : 'bg-slate-900 text-white'
+                                                                    }`}>
+                                                                        #{idx + 1}
+                                                                    </div>
+                                                                    <div 
+                                                                        className="text-xs font-bold text-slate-700 truncate prose prose-xs max-w-full"
+                                                                        dangerouslySetInnerHTML={{ __html: q.questionText }}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); loadQuestionForEdit(q); }} 
+                                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Pencil size={12} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); if (window.confirm('Delete this question?')) dispatch(deleteQuestion(q._id)); }} 
+                                                                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                                                        title="Delete"
+                                                                    >
+                                                                        <Trash2 size={12} />
+                                                                    </button>
+                                                                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Accordion Content */}
+                                                            <AnimatePresence initial={false}>
+                                                                {isExpanded && (
+                                                                    <motion.div
+                                                                        initial={{ height: 0, opacity: 0 }}
+                                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                                        exit={{ height: 0, opacity: 0 }}
+                                                                        transition={{ duration: 0.2 }}
+                                                                        className="border-t border-slate-50 bg-slate-50/10"
+                                                                    >
+                                                                        <div className="p-3 pt-1.5">
+                                                                            <div className="grid grid-cols-2 gap-1.5">
+                                                                                {['A', 'B', 'C', 'D'].map(k => (
+                                                                                    <div 
+                                                                                        key={k} 
+                                                                                        className={`py-1.5 px-2.5 rounded-lg border text-[9px] font-black flex items-center gap-2 transition-all ${
+                                                                                            q.correctAnswer === k 
+                                                                                                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 border-indigo-600 text-white shadow-md shadow-indigo-200/30' 
+                                                                                                : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <span className={`w-4 h-4 rounded flex items-center justify-center font-bold text-[8px] transition-colors ${
+                                                                                            q.correctAnswer === k ? 'bg-white/20 text-white' : 'bg-slate-50 text-slate-500'
+                                                                                        }`}>{k}</span>
+                                                                                        <div className="truncate" dangerouslySetInnerHTML={{ __html: q.options[k]?.text || '---' }} />
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div key="studio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3.5">
+
+                                        <div className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => setViewMode('bank')}
+                                                    className="p-1.5 rounded-lg transition-all bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                                                    title="Back to question list"
+                                                >
+                                                    <ArrowLeft size={14} />
+                                                </button>
+                                                <div>
+                                                    <h3 className="text-xs font-bold text-slate-800">{editForm ? 'Edit Question' : 'Question Composer'}</h3>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5">
+                                                        {editForm ? 'Update this question, then save your changes.' : 'Build several questions at once.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {activeExamId && (
+                                                    <span className={`px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${isAptitudeClass ? 'bg-violet-50 text-violet-600 border-violet-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                                        {isAptitudeClass ? 'CAREER APTITUDE' : 'IQ TEST'}
+                                                    </span>
+                                                )}
+                                                <label className="flex items-center gap-1.5 cursor-pointer bg-white px-2 py-1 border border-slate-200 rounded-md shadow-sm hover:bg-slate-50 transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isTraitBased}
+                                                        onChange={(e) => setIsTraitBased(e.target.checked)}
+                                                        className="w-3.5 h-3.5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                                    />
+                                                    <span className="text-[10px] font-bold text-slate-700">Trait-Based</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {editForm ? (
+                                            <form onSubmit={handleUpdateQuestion} className="space-y-3.5">
+                                                <QuestionBlock
+                                                    index={1}
+                                                    value={editForm}
+                                                    onTextChange={(val) => updateEditField('questionText', val)}
+                                                    onOptionTextChange={(k, val) => updateEditOption(k, 'text', val)}
+                                                    onOptionTraitChange={(k, val) => updateEditOption(k, 'traitMapping', val)}
+                                                    onCorrectChange={(k) => updateEditField('correctAnswer', k)}
+                                                    isTraitBased={isTraitBased}
+                                                    activePair={activePair}
+                                                    removable={false}
+                                                />
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        type="submit"
+                                                        disabled={loading}
+                                                        className="px-6 py-2.5 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all flex items-center gap-2.5 shadow-md shadow-slate-100 group cursor-pointer"
+                                                    >
+                                                        {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Update Question <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={cancelEdit}
+                                                        className="px-4 py-2.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-amber-100 transition-all cursor-pointer"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        ) : (
+                                            <form onSubmit={handleSaveAll} className="space-y-3.5">
+                                                {batch.map((q, i) => (
+                                                    <QuestionBlock
+                                                        key={q.localId}
+                                                        index={i + 1}
+                                                        value={q}
+                                                        onTextChange={(val) => updateBlockField(q.localId, 'questionText', val)}
+                                                        onOptionTextChange={(k, val) => updateBlockOption(q.localId, k, 'text', val)}
+                                                        onOptionTraitChange={(k, val) => updateBlockOption(q.localId, k, 'traitMapping', val)}
+                                                        onCorrectChange={(k) => updateBlockField(q.localId, 'correctAnswer', k)}
+                                                        isTraitBased={isTraitBased}
+                                                        activePair={activePair}
+                                                        removable={batch.length > 1}
+                                                        onRemove={() => removeBlock(q.localId)}
+                                                    />
+                                                ))}
+
+                                                <div className="flex flex-wrap items-center gap-3 pt-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={addBlock}
+                                                        className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-dashed border-slate-200 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-600 transition-all cursor-pointer"
+                                                    >
+                                                        <PlusCircle size={14} /> Add Another Question
+                                                    </button>
+                                                    <button
+                                                        type="submit"
+                                                        disabled={batchSaving}
+                                                        className="px-6 py-2.5 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all flex items-center gap-2.5 shadow-md shadow-slate-100 group cursor-pointer"
+                                                    >
+                                                        {batchSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save {batch.length} Question{batch.length > 1 ? 's' : ''} <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                            </>
                         )}
                     </div>
-                ) : (
-                    <AnimatePresence mode="wait">
-                        {viewMode === 'studio' ? (
-                            <motion.div key="studio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                                <button onClick={goBack} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
-                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Exit Editor / Return to Chapters
-                                </button>
-
-                                <div className="grid grid-cols-12 gap-10 items-start">
-                                    {/* Centered Form Panel */}
-                                    <div className="col-span-12 lg:col-span-9 space-y-8 bg-white border border-slate-100 rounded-2xl p-10 shadow-sm">
-                                        <div className="flex items-center justify-between border-b border-slate-50 pb-6">
-                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                                <select
-                                                    value={activeExamId}
-                                                    onChange={(e) => { setActiveExamId(e.target.value); setActiveSectionId(''); setActiveChapterId(''); }}
-                                                    className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
-                                                >
-                                                    <option value="">Select Exam</option>
-                                                    {examTypes.map(et => <option key={et._id} value={et._id}>{et.examType}</option>)}
-                                                </select>
-                                                <ChevronRight size={10} className="text-slate-300" />
-                                                <select
-                                                    value={activeSectionId}
-                                                    onChange={(e) => { setActiveSectionId(e.target.value); setActiveChapterId(''); }}
-                                                    className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-indigo-600 outline-none cursor-pointer"
-                                                    disabled={!activeExamId}
-                                                >
-                                                    <option value="">Select Section</option>
-                                                    {filteredSections.map(s => <option key={s._id} value={s._id}>{s.sectionName}</option>)}
-                                                </select>
-                                                <ChevronRight size={10} className="text-slate-300" />
-                                                <select
-                                                    value={activeChapterId}
-                                                    onChange={(e) => setActiveChapterId(e.target.value)}
-                                                    className="px-3 py-1.5 bg-slate-900 text-white border border-slate-800 rounded-lg text-[10px] font-black outline-none cursor-pointer"
-                                                    disabled={!activeSectionId}
-                                                >
-                                                    <option value="">Select Chapter</option>
-                                                    {filteredChapters.map(c => <option key={c._id} value={c._id}>{c.chapterName}</option>)}
-                                                </select>
-                                            </div>
-                                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black border border-emerald-100">
-                                                SECURE NODE ACTIVE
-                                            </div>
-                                        </div>
-
-                                        <form onSubmit={handleQSubmit} className="space-y-6">
-                                            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                                <div>
-                                                    <h3 className="text-sm font-bold text-slate-800">Question Content</h3>
-                                                    <p className="text-xs text-slate-500 mt-1">Compose the question stem.</p>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    {activeExamId && (
-                                                        <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${isAptitudeClass ? 'bg-violet-50 text-violet-600 border-violet-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
-                                                            {isAptitudeClass ? 'CAREER APTITUDE' : 'IQ TEST'}
-                                                        </span>
-                                                    )}
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isTraitBased}
-                                                            onChange={(e) => setIsTraitBased(e.target.checked)}
-                                                            className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                                        />
-                                                        <span className="text-xs font-bold text-slate-700">Trait-Based</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <SimpleEditor
-                                                value={qForm.questionText}
-                                                onChange={(val) => setQForm(p => ({ ...p, questionText: val }))}
-                                                placeholder="Enter your question here..."
-                                            />
-
-                                            <div className="space-y-6">
-                                                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                    <div className="w-1 h-3 bg-indigo-600 rounded-full" /> Choice Grid
-                                                </label>
-                                                <div className="bg-slate-50/50 p-2 rounded-2xl space-y-2 border border-slate-100">
-                                                    {['A', 'B', 'C', 'D'].map(k => (
-                                                        <div key={k} className={`flex items-start gap-4 bg-white p-3 rounded-xl border transition-all ${!isTraitBased && qForm.correctAnswer === k ? 'border-indigo-600 ring-4 ring-indigo-50 shadow-sm' : isTraitBased ? 'border-slate-100' : 'border-slate-100 hover:border-slate-200'}`}>
-                                                            {!isTraitBased && (
-                                                                <div className="flex flex-col items-center gap-3 py-2 w-16 shrink-0 border-r border-slate-50">
-                                                                    <span className={`text-sm font-black ${qForm.correctAnswer === k ? 'text-indigo-600' : 'text-slate-300'}`}>{k}</span>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setQForm(p => ({ ...p, correctAnswer: k }))}
-                                                                        className={`w-7 h-7 rounded-lg transition-all border-2 flex items-center justify-center ${qForm.correctAnswer === k
-                                                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
-                                                                            : 'bg-white border-slate-100 text-slate-100 hover:text-indigo-400 hover:border-indigo-100'
-                                                                            }`}
-                                                                    >
-                                                                        <Check size={16} strokeWidth={4} />
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                            {isTraitBased && (
-                                                                <div className="flex flex-col items-center gap-2 py-2 w-16 shrink-0 border-r border-slate-50">
-                                                                    <span className="text-sm font-black text-slate-400">{k}</span>
-                                                                    <div className={`px-1.5 py-1 rounded text-[7px] font-black uppercase tracking-wider text-center leading-tight ${qForm.options[k].traitMapping === 'CAREER_1' ? 'bg-blue-100 text-blue-700' : qForm.options[k].traitMapping === 'CAREER_2' ? 'bg-indigo-100 text-indigo-700' : qForm.options[k].traitMapping === 'BOTH' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-400'}`}>
-                                                                        {qForm.options[k].traitMapping === 'CAREER_1' ? 'Career 1' :
-                                                                         qForm.options[k].traitMapping === 'CAREER_2' ? 'Career 2' :
-                                                                         qForm.options[k].traitMapping === 'BOTH' ? 'Both +1' : 'None'}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex-1 min-w-0 flex flex-col gap-2">
-                                                                <SimpleEditor value={qForm.options[k].text} onChange={(val) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], text: val } } }))} placeholder={`Response choice ${k}...`} minHeight="60px" />
-
-                                                                {isTraitBased && (
-                                                                    <div className="flex flex-col gap-1.5 mt-2">
-                                                                        <div className="flex items-center gap-4">
-                                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest shrink-0 w-20">Trait Map</label>
-                                                                            <select
-                                                                                value={qForm.options[k].traitMapping || 'NONE'}
-                                                                                onChange={(e) => setQForm(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], traitMapping: e.target.value } } }))}
-                                                                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
-                                                                            >
-                                                                                <option value="NONE">No points awarded</option>
-                                                                                {activePair && (
-                                                                                    <>
-                                                                                        <option value="CAREER_1">+1 → {activePair.career1}</option>
-                                                                                        <option value="CAREER_2">+1 → {activePair.career2}</option>
-                                                                                        <option value="BOTH">+1 → {activePair.career1} &amp; {activePair.career2}</option>
-                                                                                    </>
-                                                                                )}
-                                                                                {!activePair && (
-                                                                                    <>
-                                                                                        <option value="CAREER_1">+1 → Career 1</option>
-                                                                                        <option value="CAREER_2">+1 → Career 2</option>
-                                                                                        <option value="BOTH">+1 → Both Careers</option>
-                                                                                    </>
-                                                                                )}
-                                                                            </select>
-                                                                        </div>
-                                                                        {qForm.options[k].traitMapping && qForm.options[k].traitMapping !== 'NONE' && (
-                                                                            <span className="text-[9px] font-bold text-violet-600 ml-24">
-                                                                                {qForm.options[k].traitMapping === 'BOTH' ? 'Awards 1 point to each career' : 'Awards 1 point'}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="pt-6">
-                                                <button
-                                                    type="submit"
-                                                    disabled={loading}
-                                                    className="px-10 py-4 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all flex items-center gap-4 shadow-xl shadow-slate-100 group"
-                                                >
-                                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {editingQuestionId ? 'Update Question' : 'Secure Progress'} <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                    {/* Sidebar Bank */}
-                                    <div className="hidden lg:col-span-3 lg:flex flex-col gap-8 sticky top-24">
-                                        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-                                            {editingQuestionId && (
-                                                <button onClick={resetQForm} className="w-full mb-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all border border-amber-200">
-                                                    Cancel Editing
-                                                </button>
-                                            )}
-                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-4">Live Session Vault</h4>
-                                            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                                {activeChapterQuestions.map((q, idx) => (
-                                                    <div key={q._id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl group relative hover:bg-white hover:border-indigo-200 transition-all cursor-default">
-                                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                                            <button onClick={() => loadQuestionForEdit(q)} className="text-slate-300 hover:text-indigo-600"><Pencil size={12} /></button>
-                                                            <button onClick={() => dispatch(deleteQuestion(q._id))} className="text-slate-300 hover:text-rose-500"><Trash2 size={12} /></button>
-                                                        </div>
-                                                        <p className="text-[10px] font-bold text-slate-700 line-clamp-2 italic" dangerouslySetInnerHTML={{ __html: q.questionText }} />
-                                                        <div className="mt-3 flex items-center gap-2">
-                                                            <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black">{q.correctAnswer}</div>
-                                                            <span className="text-[8px] font-bold text-slate-300 uppercase">STORED_SEQ_0{idx + 1}</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {activeChapterQuestions.length === 0 && <p className="text-[10px] text-slate-300 italic text-center py-10 uppercase tracking-widest">Vault Empty</p>}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-6 bg-slate-900 rounded-2xl text-white shadow-2xl relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-600 opacity-20 blur-3xl group-hover:opacity-40 transition-opacity" />
-                                            <p className="text-[10px] font-black uppercase text-indigo-400 mb-3 tracking-widest leading-none underline decoration-indigo-400 underline-offset-4">Quality Indicator</p>
-                                            <p className="text-xs font-bold leading-relaxed mb-4">You have successfully secured {activeChapterQuestions.length} nodes to the repository.</p>
-                                            <div className="flex gap-1">
-                                                <div className="h-1 bg-white/10 flex-1 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 w-1/2" /></div>
-                                                <div className="h-1 bg-white/10 flex-1 rounded-full" />
-                                                <div className="h-1 bg-white/10 flex-1 rounded-full" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div key="bank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-32">
-                                <button onClick={() => setViewMode('studio')} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all group">
-                                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Return to Editor / Selection
-                                </button>
-
-                                <div className="flex items-center justify-between pb-8 border-b border-slate-100">
-                                    <div>
-                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Chapter Question List</h2>
-                                        <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-[0.2em]">{activeChapter?.chapterName}</p>
-                                    </div>
-                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-5 py-2 rounded-xl border border-indigo-100 uppercase tracking-widest">{activeChapterQuestions.length} VERIFIED QUESTIONS</span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {activeChapterQuestions.map((q, idx) => (
-                                        <div key={q._id} className="bg-white border border-slate-100 rounded-[32px] p-8 relative group hover:border-indigo-200 transition-all hover:shadow-xl hover:shadow-indigo-500/5">
-                                            <div className="absolute top-8 right-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button onClick={() => { loadQuestionForEdit(q); setViewMode('studio'); }} className="p-2.5 bg-indigo-50 text-indigo-500 rounded-xl hover:bg-indigo-100"><Pencil size={16} /></button>
-                                                <button onClick={() => dispatch(deleteQuestion(q._id))} className="p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100"><Trash2 size={16} /></button>
-                                            </div>
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs">#{idx + 1}</div>
-                                                <div className="h-px bg-slate-50 flex-1" />
-                                            </div>
-                                            <div className="text-xs font-bold text-slate-700 mb-8 prose prose-xs" dangerouslySetInnerHTML={{ __html: q.questionText }} />
-                                            <div className="grid grid-cols-2 gap-3">
-                                                {['A', 'B', 'C', 'D'].map(k => (
-                                                    <div key={k} className={`p-3 rounded-xl border-2 text-[10px] font-black flex items-center gap-2 ${q.correctAnswer === k ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-50 text-slate-300'}`}>
-                                                        <span className={`w-5 h-5 rounded-md flex items-center justify-center ${q.correctAnswer === k ? 'bg-white/20' : 'bg-slate-100'}`}>{k}</span>
-                                                        <div className="truncate" dangerouslySetInnerHTML={{ __html: q.options[k]?.text }} />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {!activeChapterQuestions.length && <div className="py-40 text-center opacity-10 font-black uppercase tracking-[1em] text-slate-900">Repository Empty</div>}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                )}
+                </div>
             </main>
 
             <QuickCreateModal isOpen={modal.open} onClose={() => setModal({ ...modal, open: false })} title={modal.title} icon={modal.icon} fields={modal.fields} onSubmit={modal.onSubmit} loading={loading} contextLabel={modal.contextLabel} contextValue={modal.contextValue} />
