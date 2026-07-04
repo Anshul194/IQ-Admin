@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { fetchQuiz, submitExam, getResults, getCertificates } from '../../utils/api';
+import { fetchQuiz, submitExam, getResults, getCertificates, getAptitudeResults } from '../../utils/api';
 
 export const getQuizQuestions = createAsyncThunk(
     'assessment/getQuizQuestions',
@@ -29,8 +29,26 @@ export const getMyResults = createAsyncThunk(
     'assessment/getMyResults',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getResults();
-            return response.data;
+            const standardRes = await getResults();
+            const standardData = (standardRes.data || standardRes || []).map(r => ({ ...r, isAptitude: false }));
+
+            let aptitudeData = [];
+            try {
+                const aptitudeRes = await getAptitudeResults();
+                aptitudeData = (aptitudeRes.data || aptitudeRes || []).map(r => ({ 
+                    ...r, 
+                    isAptitude: true,
+                    // Synthesize percentage for UI table compatibility
+                    percentage: Math.round((r.academicGrandTotal / (r.academicAnswers?.length || 50)) * 100)
+                }));
+            } catch (e) {
+                console.error("Error fetching aptitude results:", e);
+            }
+
+            const combined = [...standardData, ...aptitudeData].sort(
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            return combined;
         } catch (err) {
             return rejectWithValue(err.response?.data?.message || 'Failed to fetch results');
         }
@@ -41,8 +59,24 @@ export const getMyCertificates = createAsyncThunk(
     'assessment/getMyCertificates',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getCertificates();
-            return response.data;
+            const standardRes = await getCertificates();
+            const standardData = (standardRes.data || standardRes || []).map(c => ({ ...c, isAptitude: false }));
+
+            let aptitudeData = [];
+            try {
+                const aptitudeRes = await getAptitudeResults();
+                aptitudeData = (aptitudeRes.data || aptitudeRes || []).map(c => ({ 
+                    ...c, 
+                    isAptitude: true 
+                }));
+            } catch (e) {
+                console.error("Error fetching aptitude certificates:", e);
+            }
+
+            const combined = [...standardData, ...aptitudeData].sort(
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            return combined;
         } catch (err) {
             return rejectWithValue(err.response?.data?.message || 'Failed to fetch certificates');
         }
@@ -93,10 +127,10 @@ const assessmentSlice = createSlice({
                         type: q.chapter?.chapterName || 'Aptitude',
                         question: q.questionText,
                         options: [
-                            { key: 'A', text: q.options.A.text },
-                            { key: 'B', text: q.options.B.text },
-                            { key: 'C', text: q.options.C.text },
-                            { key: 'D', text: q.options.D.text }
+                            { key: 'A', text: q.options?.A?.text || q.options?.A || '' },
+                            { key: 'B', text: q.options?.B?.text || q.options?.B || '' },
+                            { key: 'C', text: q.options?.C?.text || q.options?.C || '' },
+                            { key: 'D', text: q.options?.D?.text || q.options?.D || '' }
                         ],
                         image: q.questionImage?.fileUrl,
                         correctOption: q.correctAnswer

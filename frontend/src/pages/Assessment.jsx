@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { useDispatch, useSelector } from 'react-redux';
+import CareerAptitudeCertificate from '../components/CareerAptitudeCertificate';
 import { getQuizQuestions, submitAssessment, clearAssessment } from '../store/slices/assessmentSlice';
 import { downloadCertificate, downloadReport } from '../utils/api';
 
@@ -31,6 +32,8 @@ const Assessment = ({ user }) => {
     const [answers, setAnswers] = useState({});
     const [marked, setMarked] = useState(new Set());
     const [visited, setVisited] = useState(new Set([0]));
+    const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+    const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
     useEffect(() => {
         dispatch(getQuizQuestions(user?.grade || '1'));
@@ -96,28 +99,84 @@ const Assessment = ({ user }) => {
     };
 
     const handleSubmit = async () => {
-        const formattedAnswers = Object.entries(answers).map(([gIdx, optionIdx]) => {
-            let cumulative = 0;
-            let qData = null;
+        let interestAnswers = [];
+        let academicAnswers = [];
+        let standardAnswers = [];
+
+        if (isJunior) {
+            let gIdxCounter = 0;
             for (let s of sections) {
-                if (parseInt(gIdx) < cumulative + s.questions.length) {
-                    qData = s.questions[parseInt(gIdx) - cumulative];
-                    break;
+                for (let q of s.questions) {
+                    const optionIdx = answers[gIdxCounter];
+                    if (optionIdx !== undefined && q.options[optionIdx]) {
+                        standardAnswers.push({
+                            questionId: q.id,
+                            selectedOption: q.options[optionIdx].key
+                        });
+                    }
+                    gIdxCounter++;
                 }
-                cumulative += s.questions.length;
             }
-            return {
-                questionId: qData.id,
-                selectedOption: qData.options[optionIdx].key
-            };
-        });
+        } else {
+            // Section 0 is Interest
+            const interestSection = sections[0];
+            if (interestSection) {
+                interestAnswers = interestSection.questions.map((q, qIdx) => {
+                    const gIdx = qIdx;
+                    const optionIdx = answers[gIdx];
+                    let selectedOption = 'A'; // Default to 'A' if skipped, since interest answers cannot be empty/null
+                    if (optionIdx !== undefined && q.options[optionIdx]) {
+                        selectedOption = q.options[optionIdx].key;
+                    }
+                    return {
+                        questionId: q.id,
+                        selectedOption
+                    };
+                });
+            }
+
+            // Section 1 is Academic
+            const academicSection = sections[1];
+            if (academicSection) {
+                const prevCount = interestSection ? interestSection.questions.length : 0;
+                academicAnswers = academicSection.questions.map((q, qIdx) => {
+                    const gIdx = prevCount + qIdx;
+                    const optionIdx = answers[gIdx];
+                    let selectedOption = null;
+                    if (optionIdx !== undefined && q.options[optionIdx]) {
+                        selectedOption = q.options[optionIdx].key;
+                    }
+                    return {
+                        questionId: q.id,
+                        selectedOption
+                    };
+                });
+            }
+
+            // Fallback for single-section tests (e.g. dummy test setups)
+            if (interestAnswers.length === 0 && academicAnswers.length > 0) {
+                const fallbackQ = academicSection.questions[0];
+                interestAnswers = [{
+                    questionId: fallbackQ.id,
+                    selectedOption: 'A'
+                }];
+            } else if (academicAnswers.length === 0 && interestAnswers.length > 0) {
+                const fallbackQ = interestSection.questions[0];
+                academicAnswers = [{
+                    questionId: fallbackQ.id,
+                    selectedOption: null
+                }];
+            }
+        }
 
         const timeTaken = Math.round((Date.now() - startTime) / 60000);
 
         const payload = {
             examId: examId,
-            timeTaken,
-            answers: formattedAnswers
+            timeTaken: Math.max(1, timeTaken),
+            interestAnswers: isJunior ? undefined : interestAnswers,
+            academicAnswers: isJunior ? undefined : academicAnswers,
+            answers: isJunior ? standardAnswers : undefined
         };
 
         dispatch(submitAssessment(payload));
@@ -127,11 +186,19 @@ const Assessment = ({ user }) => {
     if (error) return <div className="h-screen flex flex-col items-center justify-center bg-white p-6 text-center"><AlertCircle size={48} className="text-rose-500 mb-4" /><h2 className="text-2xl font-bold mb-2">Sync Error</h2><p className="text-slate-500 mb-6 max-w-sm">{error}</p><button onClick={() => window.location.reload()} className="px-10 py-3 bg-slate-900 text-white rounded font-bold">Retry Connection</button></div>;
 
     if (isFinished && lastResult) {
-        const isPassed = lastResult.status === 'PASSED';
+        const isAptitude = !!lastResult.careerAssessment;
+        const isPassed = lastResult.status === 'PASSED' || isAptitude;
         const areas = lastResult.areas || [];
         const resultId = lastResult.resultId || lastResult._id;
-        const totalQ = lastResult.totalQuestions || 40;
-        const pct = lastResult.percentage ?? lastResult.totalPercentage ?? Math.round((lastResult.correctAnswers / totalQ) * 100);
+        const totalQ = lastResult.totalQuestions || (isAptitude ? 50 : 40);
+        
+        let pct = 0;
+        if (isAptitude) {
+            pct = Math.round((lastResult.academicAssessment?.grandTotal / (lastResult.academicAssessment?.subjects?.length * 10 || 50)) * 100);
+        } else {
+            pct = lastResult.percentage ?? lastResult.totalPercentage ?? Math.round((lastResult.correctAnswers / totalQ) * 100);
+        }
+
         return (
             <MainLayout user={user} isTesting={true}>
                 <div className="h-full flex flex-col items-center justify-center p-6 bg-slate-50 overflow-y-auto">
@@ -142,16 +209,18 @@ const Assessment = ({ user }) => {
                                     <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto text-white shadow-xl shadow-emerald-200">
                                         <Award size={48} />
                                     </div>
-                                    <h2 className="text-4xl font-black text-slate-900 leading-tight">Congratulations,<br />{user?.name}!</h2>
-                                    <p className="text-slate-600 font-medium">You have successfully cleared the {isJunior ? 'IQ TEST' : 'Career Test'} with excellence.</p>
-                                    <div className="inline-block px-6 py-3 bg-emerald-500 text-white font-bold rounded-full text-xl shadow-lg">PASSED</div>
+                                    <h2 className="text-4xl font-black text-slate-900 leading-tight">Congratulations,<br />{user?.fullName || user?.name}!</h2>
+                                    <p className="text-slate-600 font-medium">You have successfully cleared the {isAptitude ? 'Career Aptitude Test' : (isJunior ? 'IQ TEST' : 'Career Test')} with excellence.</p>
+                                    <div className="inline-block px-6 py-3 bg-emerald-500 text-white font-bold rounded-full text-xl shadow-lg">
+                                        {isAptitude ? 'COMPLETED' : 'PASSED'}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
                                     <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mx-auto text-slate-500">
                                         <RefreshCw size={48} />
                                     </div>
-                                    <h2 className="text-4xl font-black text-slate-900 leading-tight">Keep Practicing,<br />{user?.name}</h2>
+                                    <h2 className="text-4xl font-black text-slate-900 leading-tight">Keep Practicing,<br />{user?.fullName || user?.name}</h2>
                                     <p className="text-slate-600 font-medium">You were close! Re-review your weak areas in the {isJunior ? 'IQ TEST' : 'Career Test'} and try again to unlock your certificate.</p>
                                     <div className="inline-block px-6 py-3 bg-slate-400 text-white font-bold rounded-full text-xl shadow-lg">RE-ATTEMPT</div>
                                 </div>
@@ -161,20 +230,48 @@ const Assessment = ({ user }) => {
                         <div className="flex-1 p-10 space-y-6 overflow-y-auto max-h-[80vh]">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Score</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{isAptitude ? 'Academic Score' : 'Score'}</p>
                                     <p className="text-3xl font-black text-slate-900">{pct}%</p>
                                 </div>
                                 <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Correct</p>
-                                    <p className="text-3xl font-black text-slate-900">{lastResult.correctAnswers || lastResult.correctAnswersCount}/{totalQ}</p>
+                                    <p className="text-3xl font-black text-slate-900">
+                                        {isAptitude 
+                                            ? `${lastResult.academicAssessment?.grandTotal}/${lastResult.academicAssessment?.subjects?.length * 10 || 50}` 
+                                            : `${lastResult.correctAnswers || lastResult.correctAnswersCount}/${totalQ}`
+                                        }
+                                    </p>
                                 </div>
-                                {isPassed && lastResult.iqScore && (
+                                {isAptitude && lastResult.careerAssessment?.grandTotal !== undefined && (
+                                    <div className="p-5 bg-indigo-50 rounded-xl border border-indigo-100 col-span-2">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Career Affinity Score</p>
+                                        <p className="text-3xl font-black text-indigo-600">{lastResult.careerAssessment.grandTotal}</p>
+                                    </div>
+                                )}
+                                {!isAptitude && isPassed && lastResult.iqScore && (
                                     <div className="p-5 bg-indigo-50 rounded-xl border border-indigo-100 col-span-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">IQ Score</p>
                                         <p className="text-3xl font-black text-indigo-600">{lastResult.iqScore}</p>
                                     </div>
                                 )}
                             </div>
+
+                            {/* Certificate preview for Aptitude results */}
+                            {isAptitude && (
+                                <div className="space-y-3 pt-2">
+                                    <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Certificate Preview</h3>
+                                    <div className="overflow-x-auto border border-slate-200 rounded-xl flex justify-center p-3 bg-slate-100 scale-75 origin-top">
+                                        <CareerAptitudeCertificate
+                                            studentName={user?.fullName || user?.name || 'Student'}
+                                            className={user?.grade || 'N/A'}
+                                            completedAt={new Date()}
+                                            resultId={resultId}
+                                            interestAreas={lastResult.careerAssessment?.areas?.map(a => ({ label: a.name, score: a.score })) || []}
+                                            academicSubjects={lastResult.academicAssessment?.subjects?.map(s => ({ label: s.name, correct: s.correctAnswers, outOf: 10 })) || []}
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {areas.length > 0 && (
                                 <div className="space-y-3">
@@ -199,17 +296,49 @@ const Assessment = ({ user }) => {
                                 <div className="space-y-3 pt-2">
                                     <div className="flex gap-3">
                                         <button
-                                            onClick={() => downloadCertificate(resultId)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all"
+                                            onClick={async () => {
+                                                setIsDownloadingCert(true);
+                                                try {
+                                                    await downloadCertificate(resultId, isAptitude);
+                                                } catch (error) {
+                                                    console.error('Download failed:', error);
+                                                } finally {
+                                                    setIsDownloadingCert(false);
+                                                }
+                                            }}
+                                            disabled={isDownloadingCert}
+                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <Download size={14} /> Certificate
+                                            {isDownloadingCert ? (
+                                                <div className="w-[14px] h-[14px] border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Download size={14} />
+                                            )}
+                                            {isDownloadingCert ? 'Downloading...' : 'Certificate'}
                                         </button>
-                                        <button
-                                            onClick={() => downloadReport(resultId)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition-all"
-                                        >
-                                            <FileText size={14} /> Report
-                                        </button>
+                                        {!isAptitude && (
+                                            <button
+                                                onClick={async () => {
+                                                    setIsDownloadingReport(true);
+                                                    try {
+                                                        await downloadReport(resultId, isAptitude);
+                                                    } catch (error) {
+                                                        console.error('Download failed:', error);
+                                                    } finally {
+                                                        setIsDownloadingReport(false);
+                                                    }
+                                                }}
+                                                disabled={isDownloadingReport}
+                                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {isDownloadingReport ? (
+                                                    <div className="w-[14px] h-[14px] border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <FileText size={14} />
+                                                )}
+                                                {isDownloadingReport ? 'Downloading...' : 'Report'}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -285,7 +414,7 @@ const Assessment = ({ user }) => {
                                 )}
 
                                 <div className="grid grid-cols-1 gap-4">
-                                    {currentQuestion?.options.map((opt, idx) => (
+                                    {currentQuestion?.options?.map((opt, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setAnswers(prev => ({ ...prev, [currentGlobalIdx]: idx }))}
@@ -319,7 +448,7 @@ const Assessment = ({ user }) => {
                                 </button>
                             </div>
 
-                            <button onClick={handleNext} className="px-14 py-4 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-2xl shadow-slate-900/10 active:scale-95">
+                            <button onClick={currentGlobalIdx === allQuestionsCount - 1 ? handleSubmit : handleNext} className="px-14 py-4 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-2xl shadow-slate-900/10 active:scale-95">
                                 {currentGlobalIdx === allQuestionsCount - 1 ? (submitting ? 'Authenticating...' : 'Submit & Finish') : 'Save & Continue'}
                                 {currentGlobalIdx !== allQuestionsCount - 1 && <ArrowRight size={18} />}
                             </button>

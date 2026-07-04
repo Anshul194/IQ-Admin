@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyCertificates } from '../store/slices/assessmentSlice';
 import { downloadCertificate } from '../utils/api';
@@ -10,6 +10,7 @@ const Certificates = () => {
     const dispatch = useDispatch();
     const { certificates, loading } = useSelector((state) => state.assessment);
     const { user } = useSelector((state) => state.auth);
+    const [downloading, setDownloading] = useState({});
 
     useEffect(() => {
         dispatch(getMyCertificates());
@@ -59,7 +60,7 @@ const Certificates = () => {
 
                                 <div className="space-y-2">
                                     <h4 className="text-lg font-black text-slate-900 leading-tight">
-                                        {parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test'}
+                                        {cert.isAptitude ? 'Career Aptitude Test' : (parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test')}
                                     </h4>
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-relaxed">Issued on {new Date(cert.createdAt).toLocaleDateString()}</p>
                                 </div>
@@ -67,13 +68,29 @@ const Certificates = () => {
                                 <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                                     <div className="flex-1">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Verify ID</p>
-                                        <p className="text-xs font-mono font-bold text-slate-600 uppercase">IQ-{cert._id.slice(-8)}</p>
+                                        <p className="text-xs font-mono font-bold text-slate-600 uppercase">
+                                            {cert.isAptitude ? 'CAREER-' : 'IQ-'}{cert._id.slice(-8).toUpperCase()}
+                                        </p>
                                     </div>
                                     <button
-                                        onClick={() => downloadCertificate(cert._id)}
-                                        className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg"
+                                        onClick={async () => {
+                                            setDownloading(prev => ({ ...prev, [cert._id]: true }));
+                                            try {
+                                                await downloadCertificate(cert._id, cert.isAptitude);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                            } finally {
+                                                setDownloading(prev => ({ ...prev, [cert._id]: false }));
+                                            }
+                                        }}
+                                        disabled={!!downloading[cert._id]}
+                                        className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Download size={18} />
+                                        {downloading[cert._id] ? (
+                                            <div className="w-[18px] h-[18px] border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            <Download size={18} />
+                                        )}
                                     </button>
                                 </div>
                             </motion.div>
