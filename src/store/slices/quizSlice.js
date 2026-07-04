@@ -87,6 +87,11 @@ export const deleteQuestion = createAsyncThunk('quiz/deleteQuestion', async (id,
     catch (error) { return rejectWithValue(error.response?.data || error.message); }
 });
 
+export const createBatchQuestions = createAsyncThunk('quiz/createBatchQuestions', async (questions, { rejectWithValue }) => {
+    try { const response = await api.post('/question-masters/batch', { questions }); return response.data; }
+    catch (error) { return rejectWithValue(error.response?.data || error.message); }
+});
+
 export const assignQuestions = createAsyncThunk('quiz/assignQuestions', async (data, { rejectWithValue }) => {
     try { const response = await api.post('/question-masters/assign', data); return response.data; }
     catch (error) { return rejectWithValue(error.response?.data || error.message); }
@@ -124,6 +129,10 @@ const quizSlice = createSlice({
                 const newDoc = action.payload?.data || action.payload;
                 if (newDoc) { state.examTypes.push(newDoc); state.lastCreatedId = newDoc._id; }
             })
+            .addCase(deleteExamType.fulfilled, (state, action) => {
+                state.loading = false;
+                state.examTypes = state.examTypes.filter(e => e._id !== action.payload);
+            })
             .addCase(fetchExamTypes.pending, (state) => { state.fetchLoading = true; })
             .addCase(fetchExamTypes.fulfilled, (state, action) => { state.fetchLoading = false; state.examTypes = action.payload?.data || action.payload || []; })
             .addCase(fetchExamTypes.rejected, (state) => { state.fetchLoading = false; })
@@ -134,6 +143,10 @@ const quizSlice = createSlice({
                 state.success = true;
                 const newDoc = action.payload?.data || action.payload;
                 if (newDoc) { state.sections.push(newDoc); state.lastCreatedId = newDoc._id; }
+            })
+            .addCase(deleteSection.fulfilled, (state, action) => {
+                state.loading = false;
+                state.sections = state.sections.filter(s => s._id !== action.payload);
             })
             .addCase(fetchSections.pending, (state) => { state.fetchLoading = true; })
             .addCase(fetchSections.fulfilled, (state, action) => { state.fetchLoading = false; state.sections = action.payload?.data || action.payload || []; })
@@ -146,12 +159,32 @@ const quizSlice = createSlice({
                 const newDoc = action.payload?.data || action.payload;
                 if (newDoc) { state.chapters.push(newDoc); state.lastCreatedId = newDoc._id; }
             })
+            .addCase(deleteChapter.fulfilled, (state, action) => {
+                state.loading = false;
+                state.chapters = state.chapters.filter(c => c._id !== action.payload);
+            })
             .addCase(fetchChapters.pending, (state) => { state.fetchLoading = true; })
             .addCase(fetchChapters.fulfilled, (state, action) => { state.fetchLoading = false; state.chapters = action.payload?.data || action.payload || []; })
             .addCase(fetchChapters.rejected, (state) => { state.fetchLoading = false; })
 
             // Questions
             .addCase(createQuestion.fulfilled, (state, action) => { state.loading = false; state.success = true; if (action.payload?.data) state.questions.push(action.payload.data); })
+            .addCase(createBatchQuestions.fulfilled, (state, action) => {
+                state.loading = false;
+                state.success = true;
+                const batch = action.payload?.data || action.payload || [];
+                if (Array.isArray(batch)) state.questions.push(...batch);
+            })
+            .addCase(updateQuestion.fulfilled, (state, action) => {
+                state.loading = false;
+                state.success = true;
+                const updated = action.payload?.data || action.payload;
+                if (updated?._id) {
+                    const idx = state.questions.findIndex(q => q._id === updated._id);
+                    if (idx !== -1) state.questions[idx] = updated;
+                }
+            })
+            .addCase(deleteQuestion.fulfilled, (state, action) => { state.loading = false; state.questions = state.questions.filter(q => q._id !== action.payload); })
             .addCase(fetchQuestions.pending, (state) => { state.fetchLoading = true; })
             .addCase(fetchQuestions.fulfilled, (state, action) => { state.fetchLoading = false; state.questions = action.payload?.data || action.payload || []; })
             .addCase(fetchQuestions.rejected, (state) => { state.fetchLoading = false; })
