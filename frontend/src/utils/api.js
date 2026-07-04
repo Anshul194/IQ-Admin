@@ -31,7 +31,9 @@ export const fetchQuiz = async (grade) => {
 };
 
 export const submitExam = async (payload) => {
-    const response = await api.post('/results/submit', payload);
+    // If it contains interestAnswers, it's a Career Aptitude submission
+    const url = (payload.interestAnswers || payload.academicAnswers) ? '/aptitude-results/submit' : '/results/submit';
+    const response = await api.post(url, payload);
     return response.data;
 };
 
@@ -40,8 +42,18 @@ export const getResults = async () => {
     return response.data;
 };
 
+export const getAptitudeResults = async () => {
+    const response = await api.get('/aptitude-results/my-results');
+    return response.data;
+};
+
 export const getResultDetails = async (id) => {
     const response = await api.get(`/results/${id}`);
+    return response.data;
+};
+
+export const getAptitudeResultDetails = async (id) => {
+    const response = await api.get(`/aptitude-results/${id}`);
     return response.data;
 };
 
@@ -50,32 +62,90 @@ export const getCertificates = async () => {
     return response.data;
 };
 
-export const downloadCertificate = async (resultId) => {
-    const response = await api.get(`/results/${resultId}/certificate`, {
-        responseType: 'blob'
-    });
+export const downloadCertificate = async (resultId, isAptitude = false) => {
+    try {
+        const url = isAptitude 
+            ? `/aptitude-results/${resultId}/report` 
+            : `/results/${resultId}/certificate`;
+            
+        const response = await api.get(url, {
+            responseType: 'blob'
+        });
 
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `certificate_${resultId}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+        // Check if response is actually a JSON error payload disguised as a blob
+        if (response.data && response.data.type === 'application/json') {
+            const text = await response.data.text();
+            const parsed = JSON.parse(text);
+            throw new Error(parsed.message || 'Failed to download certificate.');
+        }
+
+        const urlBlob = window.URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = urlBlob;
+        link.setAttribute('download', isAptitude ? `career_report_${resultId}.pdf` : `certificate_${resultId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Defer cleanup to let browser start downloading
+        setTimeout(() => {
+            link.remove();
+            window.URL.revokeObjectURL(urlBlob);
+        }, 100);
+    } catch (err) {
+        console.error('Download certificate error:', err);
+        let errorMsg = err.message;
+        if (err.response?.data instanceof Blob) {
+            try {
+                const text = await err.response.data.text();
+                const parsed = JSON.parse(text);
+                errorMsg = parsed.message || errorMsg;
+            } catch (e) {}
+        }
+        alert('Failed to download certificate: ' + errorMsg);
+    }
 };
 
-export const downloadReport = async (resultId) => {
-    const response = await api.get(`/results/${resultId}/report`, {
-        responseType: 'blob'
-    });
+export const downloadReport = async (resultId, isAptitude = false) => {
+    try {
+        const url = isAptitude 
+            ? `/aptitude-results/${resultId}/report` 
+            : `/results/${resultId}/report`;
+            
+        const response = await api.get(url, {
+            responseType: 'blob'
+        });
 
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `report_${resultId}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+        // Check if response is actually a JSON error payload disguised as a blob
+        if (response.data && response.data.type === 'application/json') {
+            const text = await response.data.text();
+            const parsed = JSON.parse(text);
+            throw new Error(parsed.message || 'Failed to download report.');
+        }
+
+        const urlBlob = window.URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = urlBlob;
+        link.setAttribute('download', isAptitude ? `career_report_${resultId}.pdf` : `report_${resultId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Defer cleanup to let browser start downloading
+        setTimeout(() => {
+            link.remove();
+            window.URL.revokeObjectURL(urlBlob);
+        }, 100);
+    } catch (err) {
+        console.error('Download report error:', err);
+        let errorMsg = err.message;
+        if (err.response?.data instanceof Blob) {
+            try {
+                const text = await err.response.data.text();
+                const parsed = JSON.parse(text);
+                errorMsg = parsed.message || errorMsg;
+            } catch (e) {}
+        }
+        alert('Failed to download report: ' + errorMsg);
+    }
 };
 
 export default api;

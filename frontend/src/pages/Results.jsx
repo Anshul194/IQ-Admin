@@ -64,7 +64,7 @@ const Results = () => {
                                                         <FileText size={16} />
                                                     </div>
                                                     <span className="text-sm font-bold text-slate-700">
-                                                        {parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test'}
+                                                        {res.isAptitude ? 'Career Aptitude Test' : (parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test')}
                                                     </span>
                                                 </div>
                                             </td>
@@ -79,17 +79,17 @@ const Results = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
-                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${res.status === 'PASSED'
+                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${res.status === 'PASSED' || res.isAptitude
                                                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                                     : 'bg-rose-50 text-rose-600 border-rose-100'
                                                     }`}>
-                                                    {res.status === 'PASSED' ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                                                    {res.status === 'PASSED' ? 'PASSED' : res.status}
+                                                    {(res.status === 'PASSED' || res.isAptitude) ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                                    {res.isAptitude ? 'COMPLETED' : (res.status === 'PASSED' ? 'PASSED' : res.status)}
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5 text-right">
                                                 <button
-                                                    onClick={() => navigate(`/results/${res._id}`)}
+                                                    onClick={() => navigate(`/results/${res._id}?type=${res.isAptitude ? 'aptitude' : 'standard'}`)}
                                                     className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 rounded transition-all"
                                                 >
                                                     Analysis

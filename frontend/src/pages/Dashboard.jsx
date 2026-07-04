@@ -94,16 +94,16 @@ const Dashboard = ({ user }) => {
                                     results.map((res, i) => (
                                         <tr key={i} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4 font-bold text-slate-800">
-                                                {parseInt(user?.grade) <= 6 ? 'IQ TEST' : 'Career Test'}
+                                                {res.isAptitude ? 'Career Aptitude Test' : 'IQ Test'}
                                             </td>
                                             <td className="px-6 py-4 text-slate-500 font-medium">{new Date(res.createdAt).toLocaleDateString()}</td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${res.status === 'PASSED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-500'}`}>
-                                                    {res.status === 'PASSED' ? 'PASSED' : res.status}
+                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${res.status === 'PASSED' || res.isAptitude ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-500'}`}>
+                                                    {res.isAptitude ? 'COMPLETED' : res.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button onClick={() => navigate(`/results/${res._id}`)} className="text-violet-600 font-bold text-xs hover:underline">View Breakdown</button>
+                                                <button onClick={() => navigate(`/results/${res._id}?type=${res.isAptitude ? 'aptitude' : 'standard'}`)} className="text-violet-600 font-bold text-xs hover:underline">View Breakdown</button>
                                             </td>
                                         </tr>
                                     ))
