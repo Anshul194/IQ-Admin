@@ -180,9 +180,11 @@ const QuizSet = () => {
         closeModal();
     };
 
+    const defaultOption = () => ({ text: '', traitMapping: 'NONE', careerPairIndex: null });
+
     const openQuestionAdd = (examId, sectionId, chapterId) => {
         setActiveContext({ examId, sectionId, chapterId });
-        setEditQuestionData({ questionText: '', options: { A: { text: '', traitMapping: 'NONE' }, B: { text: '', traitMapping: 'NONE' }, C: { text: '', traitMapping: 'NONE' }, D: { text: '', traitMapping: 'NONE' } }, correctAnswer: 'A' });
+        setEditQuestionData({ questionText: '', options: { A: defaultOption(), B: defaultOption(), C: defaultOption(), D: defaultOption() }, correctAnswer: 'A' });
         setViewMode('add_question');
     };
 
@@ -195,12 +197,7 @@ const QuizSet = () => {
     const resetQuestionForm = () => {
         setEditQuestionData({
             questionText: '',
-            options: {
-                A: { text: '', traitMapping: 'NONE' },
-                B: { text: '', traitMapping: 'NONE' },
-                C: { text: '', traitMapping: 'NONE' },
-                D: { text: '', traitMapping: 'NONE' }
-            },
+            options: { A: defaultOption(), B: defaultOption(), C: defaultOption(), D: defaultOption() },
             correctAnswer: 'A'
         });
     };
@@ -231,7 +228,8 @@ const QuizSet = () => {
         const activeExam = examTypes.find(e => e._id === activeContext.examId);
         const activeChapter = chapters.find(c => c._id === activeContext.chapterId);
         const isAptitudeClass = parseInt(activeExam?.className) > 5;
-        const activePair = aptConfig?.careerPairs?.find(p => p.chapterSequence === activeChapter?.sequence);
+        const chapterSeq = Number(activeChapter?.sequence);
+        const activePair = aptConfig?.careerPairs?.find(p => Number(p.chapterSequence) === chapterSeq) || null;
 
         return (
             <div className="min-h-screen bg-slate-50 p-6 font-sans text-slate-800">
@@ -268,12 +266,47 @@ const QuizSet = () => {
                                         {isAptitudeClass && (
                                             <div className="mt-4 pt-4 border-t border-slate-100">
                                                 <label className="text-xs font-bold text-slate-500 mb-2 block">Trait Mapping</label>
-                                                <select value={editQuestionData.options[k].traitMapping} onChange={(e) => setEditQuestionData(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], traitMapping: e.target.value } } }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-indigo-500">
-                                                    <option value="NONE">No points awarded</option>
-                                                    <option value="CAREER_1">+1 → {activePair ? activePair.career1 : 'Career 1'}</option>
-                                                    <option value="CAREER_2">+1 → {activePair ? activePair.career2 : 'Career 2'}</option>
-                                                    <option value="BOTH">+1 → Both Careers</option>
-                                                </select>
+                                                {aptConfig?.careerPairs?.length ? (
+                                                    <>
+                                                        <div className="flex gap-2">
+                                                            <select
+                                                                value={editQuestionData.options[k]?.careerPairIndex ?? (activePair ? aptConfig.careerPairs.indexOf(activePair) : 0)}
+                                                                onChange={(e) => setEditQuestionData(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], careerPairIndex: Number(e.target.value) } } }))}
+                                                                className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-indigo-500"
+                                                            >
+                                                                {aptConfig.careerPairs.map((pair, pi) => (
+                                                                    <option key={pi} value={pi}>Pair {pi + 1}</option>
+                                                                ))}
+                                                            </select>
+                                                            <select
+                                                                value={editQuestionData.options[k]?.traitMapping || 'NONE'}
+                                                                onChange={(e) => setEditQuestionData(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], traitMapping: e.target.value } } }))}
+                                                                className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-indigo-500"
+                                                            >
+                                                                <option value="NONE">No points</option>
+                                                                <option value="CAREER_1">{aptConfig.careerPairs[editQuestionData.options[k]?.careerPairIndex ?? (activePair ? aptConfig.careerPairs.indexOf(activePair) : 0)]?.career1 || 'Career 1'}</option>
+                                                                <option value="CAREER_2">{aptConfig.careerPairs[editQuestionData.options[k]?.careerPairIndex ?? (activePair ? aptConfig.careerPairs.indexOf(activePair) : 0)]?.career2 || 'Career 2'}</option>
+                                                                <option value="BOTH">Both</option>
+                                                            </select>
+                                                        </div>
+                                                        <p className="text-[9px] text-slate-400 font-medium">
+                                                            {(() => {
+                                                                const pi = editQuestionData.options[k]?.careerPairIndex ?? (activePair ? aptConfig.careerPairs.indexOf(activePair) : -1);
+                                                                const pair = pi >= 0 ? aptConfig.careerPairs[pi] : null;
+                                                                const tm = editQuestionData.options[k]?.traitMapping || 'NONE';
+                                                                if (tm === 'NONE') return 'No points awarded';
+                                                                const c1 = pair?.career1 || 'Career 1';
+                                                                const c2 = pair?.career2 || 'Career 2';
+                                                                if (tm === 'CAREER_1') return `+1 → ${c1}`;
+                                                                if (tm === 'CAREER_2') return `+1 → ${c2}`;
+                                                                if (tm === 'BOTH') return `+1 → Both (${c1} + ${c2})`;
+                                                                return '';
+                                                            })()}
+                                                        </p>
+                                                    </>
+                                                ) : (
+                                                    <p className="text-[10px] font-semibold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg">No career pairs configured — go to Aptitude Settings to add them.</p>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -397,7 +430,11 @@ const QuizSet = () => {
                                                                 <div className="p-1.5 bg-violet-50 text-violet-600 rounded-lg"><FileText size={14} /></div>
                                                                 <span className="font-semibold text-slate-700">{chap.chapterName}</span>
                                                             </div>
-                                                            <div className="col-span-3 text-xs text-slate-400 font-medium">Sec: {seq.sectionName}</div>
+                                                            <div className="col-span-3 text-xs text-slate-400 font-medium">
+                                                                <span>Ch. {chap.sequence}</span>
+                                                                <span className="mx-1.5 text-slate-300">|</span>
+                                                                <span>Sec: {seq.sectionName}</span>
+                                                            </div>
                                                             <div className="col-span-2 text-sm text-slate-500">{chapQuestions.length} Questions</div>
                                                             <div className="col-span-2 flex justify-end gap-2" onClick={e => e.stopPropagation()}>
                                                                 <button onClick={() => openQuestionAdd(exam._id, seq._id, chap._id)} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm">
@@ -501,7 +538,13 @@ const QuizSet = () => {
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Chapter Heading</label>
                         <input name="chapterName" required className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" placeholder="e.g. Fundamental Algebra" /></div>
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ch. Sequence Rank</label>
-                        <input name="sequence" type="number" required className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" placeholder="1" defaultValue={1} /></div>
+                        <input name="sequence" type="number" required className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" placeholder="1"
+                            defaultValue={(() => {
+                                const parentSection = sections.find(s => s._id === modal.parentId);
+                                if (!parentSection) return 1;
+                                const existing = chapters.filter(c => (c.section?._id || c.section) === modal.parentId);
+                                return existing.length > 0 ? Math.max(...existing.map(c => c.sequence || 0)) + 1 : 1;
+                            })()} /></div>
                     <button type="submit" className="w-full bg-violet-600 text-white font-bold rounded-lg p-3 hover:bg-slate-900 transition-colors mt-2">Add Chapter Node</button>
                 </form>
             </Modal>
