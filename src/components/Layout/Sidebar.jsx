@@ -94,15 +94,11 @@ const Sidebar = () => {
                 className={`fixed lg:sticky top-0 h-screen bg-white border-r border-slate-100 flex flex-col z-50 transition-all duration-300 transform`}
             >
                 <div className="p-7 flex items-center mb-6">
-                    <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-100">
-                        <ShieldCheck className="text-white w-6 h-6" />
-                    </div>
-                    {sidebarOpen && (
-                        <div className="ml-3 flex flex-col">
-                            <span className="text-sm font-black text-slate-900 leading-none tracking-tight">IQ ADMIN</span>
-                            <span className="text-[10px] font-bold text-slate-400 tracking-widest mt-1 uppercase">Cloud LMS</span>
-                        </div>
-                    )}
+                    <img 
+                        src="/logo-1.png" 
+                        alt="Navodaya Wala" 
+                        className={`object-contain transition-all duration-300 ${sidebarOpen ? 'h-12 w-auto' : 'h-8 w-8'}`} 
+                    />
                 </div>
 
                 <div className="flex-1 px-4 overflow-y-auto custom-scrollbar">

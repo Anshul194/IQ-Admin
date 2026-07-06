@@ -6,7 +6,9 @@ import {
     BarChart3, BookOpen, Clock, Award, GraduationCap,
     Target, TrendingUp, Play, Menu, X, Phone, Mail, MapPin,
     Quote, ChevronDown, Sparkles, Database, FileText,
-    Calendar, Trophy, CircleUser, Heart, Briefcase
+    Calendar, Trophy, CircleUser, Heart, Briefcase, UserPlus, School,
+    ShieldCheck, RotateCcw, Layers, PieChart,
+    FileBarChart
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -26,29 +28,24 @@ const LandingPage = () => {
             <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-xl shadow-lg border-b border-slate-100 py-3' : 'bg-transparent py-6'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">
-                            <Brain size={22} className="text-white" />
-                        </div>
-                        <div className="flex flex-col -space-y-1">
-                            <span className="text-xl font-black tracking-tight text-slate-900">IQ<span className="text-violet-600">Admin</span></span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Diagnostic 2026</span>
-                        </div>
+                        <img src="/logo-1.png" alt="Navodaya Wala" className="h-12 w-auto object-contain" />
                     </div>
 
                     <div className="hidden lg:flex items-center gap-10">
-                        <a href="#about" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-violet-600 transition-colors">About</a>
-                        <a href="#schedule" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-violet-600 transition-colors">Schedule</a>
-                        <a href="#mentors" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-violet-600 transition-colors">Mentors</a>
-                        <a href="#fees" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-violet-600 transition-colors">Fees</a>
+                        <a href="#about" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-[#0845A5] transition-colors">About</a>
+                        <a href="#science" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-[#0845A5] transition-colors">Science</a>
+                        <a href="#journey" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-[#0845A5] transition-colors">Journey</a>
+                        <a href="#features" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-[#0845A5] transition-colors">Features</a>
+                        <a href="#reports" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-[#0845A5] transition-colors">Reports</a>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Link to="/login" className="hidden sm:block text-sm font-black uppercase tracking-widest text-slate-600 hover:text-violet-600 transition-colors">Login</Link>
-                        <Link to="/login" className="px-7 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-violet-600 hover:shadow-xl hover:shadow-violet-200 transition-all active:scale-95 shadow-lg shadow-slate-100">
+                        <Link to="/login" className="hidden sm:block text-sm font-black uppercase tracking-widest text-slate-600 hover:text-[#0845A5] transition-colors">Login</Link>
+                        <Link to="/login" className="px-7 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#0845A5] hover:shadow-xl hover:shadow-[#0845A5]/20 transition-all active:scale-95 shadow-lg shadow-slate-100">
                             Register Now
                         </Link>
-                        <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-slate-400">
-                            <Menu />
+                        <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-slate-500 hover:text-slate-800 transition-colors">
+                            <Menu size={24} />
                         </button>
                     </div>
                 </div>
@@ -57,572 +54,1186 @@ const LandingPage = () => {
             {/* Mobile Nav */}
             <AnimatePresence>
                 {mobileOpen && (
-                    <motion.div initial={{ opacity: 0, x: '100%' }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: '100%' }}
-                        className="fixed inset-0 z-[110] bg-white p-6 flex flex-col pt-24">
-                        <button onClick={() => setMobileOpen(false)} className="absolute top-6 right-6 p-2"><X /></button>
-                        <div className="space-y-6 flex flex-col items-center">
-                            {['About', 'Schedule', 'Mentors', 'Fees'].map(l => (
-                                <a key={l} href={`#${l.toLowerCase()}`} onClick={() => setMobileOpen(false)} className="text-2xl font-black text-slate-900">{l}</a>
-                            ))}
-                        </div>
-                    </motion.div>
+                    <>
+                        {/* Backdrop overlay */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.5 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setMobileOpen(false)}
+                            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[110] lg:hidden"
+                        />
+                        {/* Drawer panel */}
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 bottom-0 w-full max-w-xs bg-white z-[120] shadow-2xl p-6 flex flex-col justify-between border-l border-slate-100 lg:hidden"
+                        >
+                            <div>
+                                {/* Header */}
+                                <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
+                                    <img src="/logo-1.png" alt="Navodaya Wala" className="h-10 w-auto object-contain" />
+                                    <button
+                                        onClick={() => setMobileOpen(false)}
+                                        className="p-2 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 active:scale-95 transition-all"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                {/* Navigation Links */}
+                                <div className="space-y-2">
+                                    {[
+                                        { name: 'About', href: '#about', icon: Users },
+                                        { name: 'Science', href: '#science', icon: Brain },
+                                        { name: 'Journey', href: '#journey', icon: Award },
+                                        { name: 'Features', href: '#features', icon: ShieldCheck },
+                                        { name: 'Reports', href: '#reports', icon: FileBarChart },
+                                    ].map(item => (
+                                        <a
+                                            key={item.name}
+                                            href={item.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-600 hover:bg-slate-50 hover:text-[#0845A5] transition-all font-bold text-sm"
+                                        >
+                                            <item.icon size={18} className="text-slate-400" />
+                                            <span>{item.name}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Footer / Buttons */}
+                            <div className="space-y-3 pt-6 border-t border-slate-100">
+                                <Link
+                                    to="/login"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex items-center justify-center w-full py-4 rounded-2xl border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest hover:bg-slate-50 active:scale-95 transition-all"
+                                >
+                                    Login
+                                </Link>
+                                <Link
+                                    to="/login"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex items-center justify-center w-full py-4 rounded-2xl bg-[#0845A5] text-white font-black text-xs uppercase tracking-widest hover:bg-[#06388a] active:scale-95 transition-all shadow-lg shadow-[#0845A5]/20"
+                                >
+                                    Register Now
+                                </Link>
+                            </div>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
 
             {/* Hero Section */}
-            <section className="relative pt-40 pb-20 px-6 overflow-hidden min-h-screen flex items-center">
-                <div className="absolute top-0 right-0 w-[50%] h-full bg-violet-50/50 rounded-l-[120px] -z-10" />
-                <div className="absolute top-20 right-20 w-40 h-40 bg-orange-400 rounded-full blur-3xl opacity-20 -z-10" />
-                <div className="absolute bottom-20 right-1/4 w-60 h-60 bg-violet-400 rounded-full blur-3xl opacity-10 -z-10" />
+            <section className="relative pt-28 pb-16 px-6 overflow-hidden min-h-screen flex flex-col justify-center bg-white">
 
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-20">
-                    <div className="space-y-10 relative">
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-3 px-5 py-2 bg-violet-50 text-violet-600 rounded-full">
-                            <Sparkles size={14} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">India's Choice for Diagnostic Testing</span>
-                        </motion.div>
+    {/* Organic blob background shapes */}
+    <svg className="absolute -top-20 -left-20 w-[600px] h-[600px] -z-10 opacity-[0.06]" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#0845A5" d="M45.3,-58.5C57.4,-49.8,64.1,-33.1,68.6,-15.5C73.1,2.1,75.4,20.6,68.6,34.8C61.8,49,45.9,58.9,29.1,65.2C12.3,71.5,-5.4,74.2,-22.6,70.5C-39.8,66.8,-56.5,56.7,-65.8,41.8C-75.1,26.9,-77,7.2,-73.4,-10.8C-69.8,-28.8,-60.7,-45.1,-47.2,-53.9C-33.7,-62.7,-16.9,-64,0.5,-64.6C17.8,-65.2,33.2,-67.2,45.3,-58.5Z" transform="translate(100 100)" />
+    </svg>
+    <svg className="absolute bottom-0 right-0 w-[500px] h-[500px] -z-10 opacity-[0.05]" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#F14E2B" d="M39.5,-51.6C52.5,-42.4,65.3,-31.8,70.8,-17.9C76.3,-4,74.5,13.2,66.8,27.1C59.1,41,45.5,51.6,30.7,58.9C15.9,66.2,-0.1,70.2,-16.4,68.1C-32.7,66,-49.3,57.8,-59.2,44.6C-69.1,31.4,-72.3,13.2,-70.8,-4.2C-69.3,-21.6,-63.1,-38.2,-51.6,-47.7C-40.1,-57.2,-23.3,-59.6,-6.9,-58.1C9.5,-56.6,26.5,-60.8,39.5,-51.6Z" transform="translate(100 100)" />
+    </svg>
 
-                        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                            className="text-6xl md:text-8xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                            Know Your Accurate <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">IQ Score</span>
-                        </motion.h1>
+    <div className="max-w-7xl mx-auto w-full">
 
-                        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                            className="text-lg text-slate-500 max-w-xl leading-relaxed">
-                            Discover hidden talents and cognitive strengths with our psychometrically validated diagnostic assessment for students. Trusted by 2,000+ schools.
-                        </motion.p>
+        {/* Top thin utility bar */}
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 mb-10"
+        >
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Diagnostic Testing Platform</span>
+            <span className="h-px flex-1 bg-slate-200" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F14E2B]">Est. Trust Since 2012</span>
+        </motion.div>
 
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                            className="flex flex-col sm:flex-row gap-5">
-                            <Link to="/login" className="px-10 py-5 bg-violet-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-violet-200 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3">
-                                Participate Now <ArrowRight size={18} />
-                            </Link>
-                            <button className="px-10 py-5 bg-slate-900 text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-200 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3">
-                                Sample Report <FileText size={18} />
-                            </button>
-                        </motion.div>
+        <div className="grid lg:grid-cols-12 gap-6">
 
-                        <div className="flex items-center gap-10 pt-10">
-                            {[
-                                { name: 'Dr. S. K. Gupta', role: 'Psychologist' },
-                                { name: 'Dr. Anita Desai', role: 'Educator' },
-                                { name: 'Mr. Rajiv Mehta', role: 'Career Expert' }
-                            ].map((m, i) => (
-                                <div key={i} className="flex items-center gap-3 group cursor-pointer">
-                                    <div className="w-12 h-12 bg-slate-100 rounded-2xl overflow-hidden grayscale group-hover:grayscale-0 transition-all border border-slate-200 shadow-sm shadow-slate-100">
-                                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
-                                            <CircleUser size={24} />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{m.name}</p>
-                                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{m.role}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+            {/* ── LEFT: Headline column, 6 cols ── */}
+            <div className="lg:col-span-6 flex flex-col justify-between">
+                <div className="space-y-6">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[3.2rem] leading-[0.98] md:text-7xl xl:text-[5.5rem] font-black text-slate-900 tracking-tight"
+                    >
+                        Know your
+                        <br />
+                        real <span className="text-[#0845A5]">IQ.</span>
+                        <br />
+                        <span className="relative inline-block">
+                            No guesswork
+                            <span className="absolute left-0 -bottom-1 w-full h-3 bg-[#F14E2B]/25 -z-10 skew-x-3" />
+                        </span>
+                        .
+                    </motion.h1>
 
-                    <div className="relative">
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}
-                            className="relative z-10 rounded-[60px] overflow-hidden shadow-2xl border-8 border-white">
-                            <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&q=80&w=800" alt="Student" className="w-full h-full object-cover" />
-                            <div className="absolute bottom-10 left-10 right-10 p-10 bg-white/10 backdrop-blur-md rounded-[40px] border border-white/20">
-                                <div className="text-4xl font-black text-white">MY IQ IS 138</div>
-                                <div className="text-xs font-black text-white/70 uppercase tracking-widest mt-2">World Percentile: 98th</div>
-                            </div>
-                        </motion.div>
-                        {/* Decorative circles */}
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-400 rounded-full -z-0 animate-pulse opacity-20" />
-                        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-violet-600 rounded-full -z-0 animate-bounce opacity-20" />
-                    </div>
+                    <motion.p
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="text-base text-slate-500 max-w-md leading-relaxed"
+                    >
+                        A psychometrically validated diagnostic test that uncovers hidden cognitive strengths — built for students, backed by science.
+                    </motion.p>
+
+                    {/* Minimal compact buttons */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="flex items-center gap-3 pt-2"
+                    >
+                        <Link
+                            to="/login"
+                            className="group px-6 py-3 bg-[#0845A5] text-white rounded-full font-bold text-xs hover:bg-[#06388a] transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            Take the Test
+                            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
+                        <button className="px-6 py-3 bg-transparent text-slate-700 border border-slate-300 rounded-full font-bold text-xs hover:border-[#0845A5] hover:text-[#0845A5] transition-all active:scale-95 flex items-center gap-2">
+                            <FileText size={14} /> Sample Report
+                        </button>
+                    </motion.div>
                 </div>
+
+                {/* Experts, redesigned as a compact horizontal card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="mt-10 flex items-center gap-0 rounded-2xl border border-slate-200 divide-x divide-slate-200 overflow-hidden w-fit"
+                >
+                    {[
+                        { name: 'Dr. S. K. Gupta', role: 'Psychologist' },
+                        { name: 'Dr. Anita Desai', role: 'Educator' },
+                        { name: 'Mr. Rajiv Mehta', role: 'Career Expert' }
+                    ].map((m, i) => (
+                        <div key={i} className="flex items-center gap-2.5 px-4 py-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                                <CircleUser size={15} />
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black text-slate-900 leading-tight">{m.name}</p>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{m.role}</p>
+                            </div>
+                        </div>
+                    ))}
+                </motion.div>
+            </div>
+
+            {/* ── RIGHT: Bento grid, 6 cols ── */}
+            <div className="lg:col-span-6 grid grid-cols-2 grid-rows-2 gap-4 h-[520px]">
+
+                {/* Big image cell */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.94 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="col-span-2 row-span-1 relative rounded-3xl overflow-hidden"
+                >
+                    <img
+                        src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&q=80&w=800"
+                        alt="Student"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-white/95 backdrop-blur rounded-full pl-1.5 pr-4 py-1.5">
+                        <div className="w-7 h-7 rounded-full bg-[#0845A5] flex items-center justify-center">
+                            <Sparkles size={12} className="text-white" />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-800">Live now: 2,412 students testing</span>
+                    </div>
+                </motion.div>
+
+                {/* IQ score cell */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="bg-[#0845A5] rounded-3xl p-5 flex flex-col justify-between"
+                >
+                    <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">IQ Score</span>
+                        <TrendingUp size={14} className="text-white/60" />
+                    </div>
+                    <div>
+                        <div className="text-4xl font-black text-white">138</div>
+                        <div className="text-[9px] font-bold text-white/70 mt-1">98th percentile globally</div>
+                    </div>
+                </motion.div>
+
+                {/* Rating / bar chart cell */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="bg-[#F14E2B] rounded-3xl p-5 flex flex-col justify-between"
+                >
+                    <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-white/70 uppercase tracking-widest">Schools</span>
+                        <Star size={14} className="text-white fill-white" />
+                    </div>
+                    <div className="flex items-end gap-1 h-8">
+                        {[40, 65, 50, 80, 60, 95].map((h, i) => (
+                            <div key={i} className="flex-1 bg-white/40 rounded-sm" style={{ height: `${h}%` }} />
+                        ))}
+                    </div>
+                    <div className="text-lg font-black text-white mt-1">2,000+</div>
+                </motion.div>
+            </div>
+        </div>
+
+        {/* Bottom scrolling trust marquee */}
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mt-14 pt-6 border-t border-slate-100 overflow-hidden"
+        >
+            <div className="flex gap-16 animate-marquee whitespace-nowrap">
+                {[...Array(2)].map((_, loop) => (
+                    <div key={loop} className="flex gap-16 shrink-0">
+                        {['DELHI PUBLIC SCHOOL', 'RYAN INTERNATIONAL', 'ST. XAVIER\'S', 'DAV SCHOOLS', 'KENDRIYA VIDYALAYA', 'AMITY GLOBAL'].map((name, i) => (
+                            <span key={i} className="text-sm font-black text-slate-300 tracking-wide shrink-0">
+                                {name}
+                            </span>
+                        ))}
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    </div>
             </section>
 
             {/* IQ Scale Distribution */}
-            <section className="py-28 px-6 bg-[#2dd4bf]/10">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center space-y-6 mb-20 text-[#134e4a]">
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">IQ Scale Distribution</h2>
-                        <div className="w-20 h-2 bg-[#134e4a] mx-auto rounded-full" />
+            <section id="science" className="relative py-28 px-6 bg-slate-50 overflow-hidden">
+
+    {/* Subtle background accents matching hero */}
+    <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-[#0845A5]/5 rounded-full blur-3xl -z-0" />
+    <div className="absolute bottom-0 left-0 w-[24rem] h-[24rem] bg-[#F14E2B]/5 rounded-full blur-3xl -z-0" />
+
+    <div className="max-w-7xl mx-auto relative z-10">
+
+        {/* Header — left aligned, split with a stat callout on the right */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div>
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#F14E2B] mb-3 block">
+                    The Science Behind It
+                </span>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                    Where do you fall on the
+                    <br />
+                    <span className="text-[#0845A5]">IQ Scale?</span>
+                </h2>
+            </div>
+            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[#0845A5] flex items-center justify-center">
+                    <CheckCircle2 size={18} className="text-white" />
+                </div>
+                <div>
+                    <div className="text-lg font-black text-slate-900 leading-none">99.9%</div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Reliability Rate</div>
+                </div>
+            </div>
+        </div>
+
+        {/* Main card */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+
+            <div className="grid lg:grid-cols-5">
+
+                {/* Left — Curve visualization, spans 3 */}
+                <div className="lg:col-span-3 p-10 lg:p-14 relative">
+
+                    {/* Genius marker floating above peak */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-10"
+                    >
+                        <span className="px-3 py-1.5 bg-[#F14E2B] text-white rounded-full shadow-lg flex items-center gap-1.5">
+                            <Star size={12} className="fill-white" />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Genius Zone</span>
+                        </span>
+                    </motion.div>
+
+                    <div className="relative h-64 w-full flex items-end justify-center mt-16 mb-6">
+                        <svg className="w-full h-full" viewBox="0 0 1000 300" fill="none">
+                            <defs>
+                                <linearGradient id="curveGradient" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="#0845A5" />
+                                    <stop offset="50%" stopColor="#0845A5" />
+                                    <stop offset="100%" stopColor="#F14E2B" />
+                                </linearGradient>
+                                <linearGradient id="fillGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#0845A5" stopOpacity="0.12" />
+                                    <stop offset="100%" stopColor="#0845A5" stopOpacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <path
+                                d="M0,280 C300,280 400,20 500,20 C600,20 700,280 1000,280 L1000,300 L0,300 Z"
+                                fill="url(#fillGradient)"
+                            />
+                            <path
+                                d="M0,280 C300,280 400,20 500,20 C600,20 700,280 1000,280"
+                                stroke="url(#curveGradient)"
+                                strokeWidth="7"
+                                strokeLinecap="round"
+                            />
+                            {/* Peak dot */}
+                            <circle cx="500" cy="20" r="8" fill="#F14E2B" />
+                            <circle cx="500" cy="20" r="14" fill="#F14E2B" fillOpacity="0.2" />
+                        </svg>
                     </div>
 
-                    <div className="relative max-w-4xl mx-auto bg-white/50 backdrop-blur-xl p-12 rounded-[60px] border border-white/40 shadow-xl shadow-[#2dd4bf]/20">
-                        {/* Bell Curve Illustration */}
-                        <div className="relative h-64 w-full flex items-end justify-center mb-10 overflow-hidden">
-                            <svg className="w-full h-full text-[#0d9488]" viewBox="0 0 1000 300" fill="none">
-                                <path d="M0,280 C300,280 400,20 500,20 C600,20 700,280 1000,280" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
-                                <path d="M0,280 C300,280 400,20 500,20 C600,20 700,280 1000,280 L1000,300 L0,300 Z" fill="currentColor" fillOpacity="0.05" />
-                                {/* Grid lines */}
-                                {[0, 1, 2, 3, 4, 5, 6].map(i => (
-                                    <line key={i} x1={50 + i * 150} y1="280" x2={50 + i * 150} y2="290" stroke="currentColor" strokeWidth="2" />
-                                ))}
-                            </svg>
-                            {/* People Icons along the curve */}
-                            <div className="absolute left-1/2 -top-4 -translate-x-1/2 flex flex-col items-center">
-                                <span className="p-2 bg-[#0d9488] text-white rounded-lg mb-2 shadow-lg"><Star size={16} /></span>
-                                <span className="text-[10px] font-black text-[#0d9488] uppercase">Genius</span>
+                    {/* Scale numbers */}
+                    <div className="grid grid-cols-7 text-center">
+                        {[70, 85, 100, 115, 130, 145, 160].map((v, i) => (
+                            <div key={v} className="flex flex-col items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${i === 3 ? 'bg-[#F14E2B]' : 'bg-slate-300'}`} />
+                                <span className={`text-xs font-black ${i === 3 ? 'text-[#F14E2B]' : 'text-slate-400'}`}>{v}</span>
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-7 text-center">
-                            {[70, 85, 100, 115, 130, 145, 160].map(v => (
-                                <div key={v} className="flex flex-col items-center space-y-2">
-                                    <div className="w-1 h-2 bg-[#0d9488] rounded-full" />
-                                    <span className="text-xs font-black text-[#134e4a]">{v}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <p className="mt-14 text-center text-[#134e4a] font-bold text-sm max-w-2xl mx-auto leading-relaxed">
-                            Our diagnostic platform is designed by clinical psychologists and psychometricians to accurately place your child within the global IQ spectrum with 99.9% reliability.
-                        </p>
+                        ))}
                     </div>
                 </div>
-            </section>
+
+                {/* Right — Zone breakdown list, spans 2 */}
+                <div className="lg:col-span-2 bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 divide-y divide-slate-200">
+                    {[
+                        { range: '70–84', label: 'Borderline', pct: '~14%', color: '#94a3b8' },
+                        { range: '85–114', label: 'Average', pct: '~68%', color: '#0845A5' },
+                        { range: '115–129', label: 'Above Average', pct: '~14%', color: '#0845A5' },
+                        { range: '130+', label: 'Gifted / Genius', pct: '~2%', color: '#F14E2B' },
+                    ].map((zone, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: 20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.08 }}
+                            className="flex items-center justify-between px-8 py-5"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: zone.color }} />
+                                <div>
+                                    <p className="text-sm font-black text-slate-900">{zone.label}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">IQ {zone.range}</p>
+                                </div>
+                            </div>
+                            <span className="text-sm font-black" style={{ color: zone.color }}>{zone.pct}</span>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Bottom strip */}
+            <div className="border-t border-slate-200 px-10 lg:px-14 py-8 bg-gradient-to-r from-[#0845A5]/[0.03] to-[#F14E2B]/[0.03]">
+                <p className="text-center text-slate-500 font-medium text-sm max-w-2xl mx-auto leading-relaxed">
+                    Our diagnostic platform is designed by clinical psychologists and psychometricians to accurately place your child within the global IQ spectrum with{' '}
+                    <span className="font-black text-slate-900">99.9% reliability</span>.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
 
             {/* How to Participate */}
-            <section id="about" className="py-28 px-6 bg-white overflow-hidden relative">
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
-                    <div className="relative">
-                        <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                            className="rounded-[80px] overflow-hidden border-8 border-slate-50 shadow-2xl relative z-10 aspect-square">
-                            <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=800" alt="Child cap" className="w-full h-full object-cover" />
-                        </motion.div>
-                        {/* Decorative background */}
-                        <div className="absolute -top-10 -right-10 w-full h-full bg-slate-50 rounded-[80px] -z-0" />
-                        <div className="absolute top-20 -left-10 w-24 h-24 bg-orange-400 rounded-full blur-2xl opacity-10" />
-                    </div>
+<section id="about" className="relative py-28 px-6 bg-white overflow-hidden">
 
-                    <div className="space-y-12">
-                        <div className="space-y-4">
-                            <h2 className="text-5xl font-black text-slate-900 leading-tight">How to Participate and<br />Where to Register</h2>
-                            <p className="text-slate-500 font-bold uppercase text-xs tracking-[0.2em]">Three easy ways to start your journey</p>
+    {/* Background accents matching brand */}
+    <div className="absolute top-0 left-0 w-[28rem] h-[28rem] bg-[#0845A5]/5 rounded-full blur-3xl -z-0" />
+    <div className="absolute bottom-0 right-0 w-[24rem] h-[24rem] bg-[#F14E2B]/5 rounded-full blur-3xl -z-0" />
+
+    <div className="max-w-7xl mx-auto relative z-10">
+
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div>
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#F14E2B] mb-3 block">
+                    Get Started Today
+                </span>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                    How to Participate &
+                    <br />
+                    <span className="text-[#0845A5]">Where to Register</span>
+                </h2>
+            </div>
+            <p className="text-slate-500 font-medium text-sm max-w-sm">
+                Whether your child is in Class 1 or Class 12, there's a diagnostic test built for their exact age group — with results in a downloadable report and certificate.
+            </p>
+        </div>
+
+        <div className="grid lg:grid-cols-12 gap-6 items-start">
+
+            {/* LEFT — Registration steps, spans 7 */}
+            <div className="lg:col-span-7 space-y-4">
+                {[
+                    {
+                        icon: UserPlus,
+                        title: 'Direct Child Registration',
+                        desc: 'Parents can register their children directly through our secure online portal with verified parent consent — no school involvement needed.',
+                        tag: 'Fastest',
+                    },
+                    {
+                        icon: School,
+                        title: 'Offline School Registration',
+                        desc: 'Contact your school administration or class teacher to participate in the upcoming campus-wide diagnostic, scheduled with your institution.',
+                        tag: 'Most Common',
+                    },
+                    {
+                        icon: FileText,
+                        title: 'Registration Through Physical Form',
+                        desc: 'Download the physical form, fill it out, and submit it to the designated coordinator at your institution for manual enrollment.',
+                        tag: 'No Internet Needed',
+                    }
+                ].map((s, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                        whileHover={{ x: 6 }}
+                        className="group flex gap-5 p-7 rounded-3xl border border-slate-200 bg-white hover:border-[#0845A5]/30 hover:shadow-lg transition-all"
+                    >
+                        <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#0845A5] flex items-center justify-center group-hover:bg-[#F14E2B] transition-colors">
+                            <s.icon size={20} className="text-white" />
                         </div>
-
-                        <div className="space-y-6">
-                            {[
-                                { icon: Shield, title: 'Direct Child Registration', desc: 'Parents can register their children directly through our secure online portal with verified parent consent.', color: 'border-violet-100 bg-violet-50 text-violet-600' },
-                                { icon: Database, title: 'Offline School Registration', desc: 'Contact your school administration or class teacher to participate in the upcoming campus-wide diagnostic.', color: 'border-indigo-100 bg-indigo-50 text-indigo-600' },
-                                { icon: GraduationCap, title: 'Registration Through School', desc: 'Download the physical form, fill it out, and submit it to the designated coordinator at your institution.', color: 'border-emerald-100 bg-emerald-50 text-emerald-600' }
-                            ].map((s, i) => (
-                                <motion.div key={i} whileHover={{ x: 10 }} className={`flex gap-6 p-8 rounded-3xl border transition-all hover:shadow-lg ${s.color}`}>
-                                    <div className="shrink-0 w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                                        <s.icon size={24} />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black text-lg text-slate-900 mb-1">{s.title}</h4>
-                                        <p className="text-sm text-slate-500 leading-relaxed font-medium">{s.desc}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Avenues/Schedule Cards */}
-            <section id="schedule" className="py-28 px-6 bg-slate-50">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center space-y-6 mb-20 text-slate-900">
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Annual Schedule</h2>
-                        <div className="w-20 h-2 bg-violet-600 mx-auto rounded-full" />
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-10">
-                        {[
-                            { month: 'September', title: 'Registration Begins', desc: 'School onboarding and student enrollment phase across all zones.', icon: Calendar, color: 'bg-violet-600 shadow-violet-200' },
-                            { month: 'November', title: 'Test Window 01', desc: 'Primary assessment window for schools and individual participants.', icon: Clock, color: 'bg-orange-500 shadow-orange-200' },
-                            { month: 'January', title: 'Result & Reports', desc: 'Comprehensive result publication and parent counseling sessions.', icon: BarChart3, color: 'bg-emerald-500 shadow-emerald-200' }
-                        ].map((s, i) => (
-                            <motion.div key={i} whileHover={{ y: -10 }} className="bg-white rounded-[50px] p-10 flex flex-col items-center text-center shadow-xl shadow-slate-200/50 border border-slate-100 relative group overflow-hidden">
-                                <div className={`absolute top-0 inset-x-0 h-2 ${s.color}`} />
-                                <div className={`w-20 h-20 rounded-3xl ${s.color} text-white flex items-center justify-center mb-8 shadow-2xl transition-transform group-hover:scale-110`}>
-                                    <s.icon size={32} />
-                                </div>
-                                <h4 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] mb-2">{s.month}</h4>
-                                <h3 className="text-2xl font-black text-slate-900 mb-6">{s.title}</h3>
-                                <p className="text-sm text-slate-500 leading-relaxed font-medium mb-10 max-w-[200px]">{s.desc}</p>
-                                <button className="text-[10px] font-black uppercase tracking-widest py-3 px-6 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all">View Details</button>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Features of the Test */}
-            <section className="py-28 px-6 bg-white overflow-hidden">
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
-                    <div className="space-y-12">
-                        <div className="space-y-4">
-                            <h2 className="text-5xl font-black text-slate-900 leading-tight">Features Of The Test</h2>
-                            <div className="w-20 h-2 bg-violet-600 rounded-full" />
-                        </div>
-
-                        <div className="space-y-5">
-                            {[
-                                { icon: Clock, title: 'Total Duration- (45) Minutes', desc: '40 Questions across 4 modules.', color: 'text-violet-600 bg-violet-50' },
-                                { icon: Briefcase, title: 'Bilingual Assessment Interface', desc: 'Questions in Hindi and English simultaneously.', color: 'text-indigo-600 bg-indigo-50' },
-                                { icon: Shield, title: 'AI-Proctored Security Mode', desc: 'Ensures 100% integrity across all exam windows.', color: 'text-emerald-600 bg-emerald-50' },
-                                { icon: Target, title: 'Grade-Specific Calibration', desc: 'Tailored for classes 1st up to 12th.', color: 'text-orange-600 bg-orange-50' }
-                            ].map((f, i) => (
-                                <motion.div key={i} whileHover={{ x: 10 }} className="flex items-center gap-6 p-6 rounded-[30px] border border-slate-100 hover:border-violet-100 transition-all">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${f.color}`}>
-                                        <f.icon size={22} />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black text-slate-900 text-sm">{f.title}</h4>
-                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{f.desc}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="relative">
-                        <div className="rounded-[80px] bg-emerald-500 overflow-hidden aspect-[4/5] relative">
-                            <img src="https://images.unsplash.com/photo-1491013516836-7dbf3d9d3f1a?auto=format&fit=crop&q=80&w=800" alt="Features" className="w-full h-full object-cover" />
-                            <div className="absolute inset-x-0 bottom-0 p-12 bg-gradient-to-t from-emerald-900/60 to-transparent">
-                                <div className="p-8 bg-white/10 backdrop-blur-xl rounded-[40px] border border-white/20">
-                                    <p className="text-xs font-black text-white uppercase tracking-widest mb-2">Did You Know?</p>
-                                    <h4 className="text-2xl font-black text-white leading-tight">IQ tests are 90% accurate predictors of future career success.</h4>
-                                </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1.5">
+                                <h4 className="font-black text-base text-slate-900">{s.title}</h4>
+                                <span className="text-[9px] font-black uppercase tracking-wider text-[#F14E2B] bg-[#F14E2B]/10 px-2 py-0.5 rounded-full shrink-0">
+                                    {s.tag}
+                                </span>
                             </div>
+                            <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
                         </div>
-                        {/* Blob */}
-                        <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 -z-10" />
-                    </div>
-                </div>
-            </section>
+                        <ArrowRight size={18} className="text-slate-300 group-hover:text-[#0845A5] group-hover:translate-x-1 transition-all shrink-0 self-center" />
+                    </motion.div>
+                ))}
 
-            {/* Awards & Rewards */}
-            <section className="py-28 px-6 bg-slate-50">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center space-y-6 mb-24">
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Awards & Rewards</h2>
-                        <div className="w-20 h-2 bg-orange-500 mx-auto rounded-full" />
-                    </div>
+                {/* CTA row */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.35 }}
+                    className="flex items-center gap-3 pt-2"
+                >
+                    <Link
+                        to="/login"
+                        className="px-6 py-3 bg-[#0845A5] text-white rounded-full font-bold text-xs hover:bg-[#06388a] transition-all active:scale-95 flex items-center gap-2"
+                    >
+                        Register Now <ArrowRight size={14} />
+                    </Link>
+                    {/* <button className="px-6 py-3 bg-transparent text-slate-700 border border-slate-300 rounded-full font-bold text-xs hover:border-[#0845A5] hover:text-[#0845A5] transition-all active:scale-95">
+                        Download Physical Form
+                    </button> */}
+                </motion.div>
+            </div>
 
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            { pos: '1st Rank', cat: 'State Level', gift: 'Tablets + Trophy + Certificate', icon: Trophy, color: 'text-amber-500 bg-amber-50 border-amber-100' },
-                            { pos: '2nd Rank', cat: 'State Level', gift: 'Laptops + Trophy + Certificate', icon: Award, color: 'text-slate-400 bg-slate-50 border-slate-100' },
-                            { pos: '3rd Rank', cat: 'State Level', gift: 'Smart Watches + Trophy + Certificate', icon: Award, color: 'text-orange-400 bg-orange-50 border-orange-100' }
-                        ].map((a, i) => (
-                            <motion.div key={i} whileHover={{ y: -10 }} className={`p-10 rounded-[50px] border-4 text-center space-y-6 bg-white transition-all hover:shadow-2xl ${a.color}`}>
-                                <div className="inline-flex p-6 bg-white rounded-[32px] shadow-lg text-inherit">
-                                    <a.icon size={48} />
-                                </div>
-                                <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{a.pos}</h3>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-black text-inherit uppercase tracking-widest">{a.cat}</p>
-                                    <p className="text-xs font-bold text-slate-400 leading-relaxed">{a.gift}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+            {/* RIGHT — Test structure card + image, spans 5 */}
+            <div className="lg:col-span-5 space-y-4">
 
-                    <div className="grid md:grid-cols-4 gap-6 mt-16">
-                        {[
-                            { name: 'ZONE TOPPER', color: 'bg-violet-600' },
-                            { name: 'CITY TOPPER', color: 'bg-indigo-600' },
-                            { name: 'SCHOOL TOPPER', color: 'bg-emerald-600' },
-                            { name: 'CLASS TOPPER', color: 'bg-orange-600' }
-                        ].map((badge, i) => (
-                            <div key={i} className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex items-center gap-4 group">
-                                <div className={`w-12 h-12 ${badge.color} rounded-2xl flex items-center justify-center text-white shadow-lg shadow-inherit transition-transform group-hover:rotate-12`}>
-                                    <Trophy size={20} />
-                                </div>
-                                <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{badge.name}</span>
-                            </div>
-                        ))}
+                {/* Image card */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.94 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="relative rounded-3xl overflow-hidden h-56"
+                >
+                    <img
+                        src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=800"
+                        alt="Child cap"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0845A5]/70 via-transparent to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                        <p className="text-white font-black text-sm">Two Test Tracks, One Platform</p>
+                        <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider mt-0.5">Classes 1–12 Covered</p>
                     </div>
-                </div>
-            </section>
+                </motion.div>
 
-            {/* Results Section */}
-            <section className="py-28 px-6 bg-white relative overflow-hidden">
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
-                    <div className="relative">
-                        <div className="rounded-[80px] overflow-hidden aspect-square relative z-10 border-8 border-white shadow-2xl">
-                            <img src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=800" alt="Results" className="w-full h-full object-cover" />
+                {/* Two test-structure cells side by side */}
+                <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.1 }}
+                        className="bg-[#0845A5] rounded-3xl p-5"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Classes 1–5</span>
+                            <Brain size={14} className="text-white/60" />
                         </div>
-                        {/* Floating elements */}
-                        <motion.div animate={{ y: [0, -15, 0] }} transition={{ repeat: Infinity, duration: 3 }}
-                            className="absolute -top-10 -right-10 px-8 py-5 bg-white rounded-3xl shadow-xl border border-slate-100 flex items-center gap-4 z-20">
-                            <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center"><CheckCircle2 /></div>
-                            <div><div className="text-[10px] font-black text-slate-400">STATUS</div><div className="text-sm font-black text-emerald-600">CERTIFIED</div></div>
-                        </motion.div>
-                        <div className="absolute top-20 -left-10 w-60 h-60 bg-orange-400 rounded-full blur-[100px] opacity-20 -z-10" />
-                    </div>
+                        <div className="text-2xl font-black text-white">40</div>
+                        <div className="text-[9px] font-bold text-white/70 mt-0.5">Questions · IQ Test</div>
+                        <div className="h-px bg-white/15 my-3" />
+                        <div className="text-[10px] font-bold text-white/80">60 min · 5 areas</div>
+                    </motion.div>
 
-                    <div className="space-y-12">
-                        <div className="space-y-4">
-                            <h2 className="text-5xl font-black text-slate-900 leading-tight">For Better Results and<br />Assessment Score</h2>
-                            <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Guidelines for our scholars</p>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-[#F14E2B] rounded-3xl p-5"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[9px] font-black text-white/70 uppercase tracking-widest">Classes 6–12</span>
+                            <Briefcase size={14} className="text-white/80" />
                         </div>
-
-                        <div className="space-y-4">
-                            {[
-                                'Ensure a stable internet connection for the test window.',
-                                'Use a modern version of Chrome or Edge browser.',
-                                'Keep your school ID ready for initial verification.',
-                                'Test environment should be quiet and well-lit.',
-                                'Parent consent is mandatory for all primary students.'
-                            ].map((item, i) => (
-                                <div key={i} className="flex gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:border-violet-200 transition-all">
-                                    <div className="w-6 h-6 shrink-0 bg-violet-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg shadow-violet-100 group-hover:scale-110 transition-transform">
-                                        {i + 1}
-                                    </div>
-                                    <p className="text-[13px] font-bold text-slate-600 leading-relaxed">{item}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        <button className="px-12 py-5 bg-orange-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-orange-200 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 w-fit">
-                            Check Results Dashboard <ArrowRight size={18} />
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            {/* Mentors Section */}
-            <section id="mentors" className="py-28 px-6 bg-slate-50">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center space-y-6 mb-20 text-slate-900">
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Our Mentors</h2>
-                        <div className="w-20 h-2 bg-violet-600 mx-auto rounded-full" />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto">
-                        {[
-                            { name: 'Dr. G. S. Kushwaha', role: 'Psychometrician', bio: 'Expert in clinical psychology with 25+ years of experience in student assessments.', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400' },
-                            { name: 'Dr. Vidit Bansal', role: 'Chief Educator', bio: 'Leading educationist focused on innovative diagnostic-led pedagogy.', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400' }
-                        ].map((m, i) => (
-                            <div key={i} className="bg-white rounded-[60px] p-10 flex flex-col items-center text-center shadow-xl shadow-slate-200/40 relative group">
-                                <div className="w-40 h-40 rounded-[50px] overflow-hidden mb-8 border-4 border-slate-50 shadow-lg grayscale group-hover:grayscale-0 transition-all">
-                                    <img src={m.img} alt={m.name} className="w-full h-full object-cover" />
-                                </div>
-                                <h3 className="text-2xl font-black text-slate-900 mb-1">{m.name}</h3>
-                                <p className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-6">{m.role}</p>
-                                <p className="text-[13px] font-bold text-slate-400 leading-relaxed max-w-xs">{m.bio}</p>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="mt-28">
-                        <div className="text-center space-y-4 mb-20">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Scientific Experts Panel</h3>
-                            <h2 className="text-3xl font-black text-slate-900">Research & Design Team</h2>
-                        </div>
-                        <div className="grid md:grid-cols-4 gap-8">
-                            {[
-                                { name: 'Prof. R. Deshmukh', role: 'Lead Data Analyst' },
-                                { name: 'Ms. Priya Verma', role: 'Child Counselor' },
-                                { name: 'Mr. J. P. Singh', role: 'Educationalist' },
-                                { name: 'Dr. Rahul Tiwari', role: 'IT Director' }
-                            ].map((e, i) => (
-                                <div key={i} className="bg-white p-8 rounded-[40px] text-center border border-slate-100 shadow-lg shadow-slate-200/50 group">
-                                    <div className="w-20 h-20 bg-slate-50 rounded-3xl mx-auto mb-6 flex items-center justify-center text-slate-300 transition-colors group-hover:bg-violet-600 group-hover:text-white">
-                                        <CircleUser size={32} />
-                                    </div>
-                                    <h4 className="font-black text-slate-900 text-sm mb-1">{e.name}</h4>
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{e.role}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Testimonials Quote */}
-            <section className="py-28 px-6 bg-white relative overflow-hidden">
-                <div className="max-w-4xl mx-auto relative">
-                    <div className="absolute -top-10 -left-10 text-slate-100 -z-0"><Quote size={160} /></div>
-                    <div className="relative z-10 space-y-10 text-center">
-                        <p className="text-3xl md:text-4xl font-black text-slate-900 leading-tight italic">
-                            "The diagnostic evaluation provided such clarity for my son's career path. The 15-page report was a revelation."
-                        </p>
-                        <div className="flex items-center justify-center gap-4">
-                            <div className="w-16 h-16 bg-slate-900 rounded-3xl overflow-hidden shadow-lg border-2 border-white">
-                                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200" alt="Rishabh" className="w-full h-full object-cover" />
-                            </div>
-                            <div className="text-left">
-                                <h5 className="font-black text-slate-900">Rishabh Mehra</h5>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Parent, Delhi Public School</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Fees Section */}
-            <section id="fees" className="py-28 px-6 bg-slate-50 relative overflow-hidden">
-                <div className="max-w-7xl mx-auto text-center">
-                    <div className="space-y-6 mb-20 text-slate-900">
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">FEE STRUCTURE</h2>
-                        <div className="w-20 h-2 bg-orange-600 mx-auto rounded-full" />
-                        <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] font-sans">Applicable for 2026-2027 Academic Year</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-10">
-                        {/* Individual Card */}
-                        <div className="bg-white rounded-[60px] overflow-hidden shadow-2xl border border-slate-100 relative group">
-                            <div className="bg-slate-900 p-10 text-white text-center space-y-2">
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Individual Participation</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">For home students</p>
-                            </div>
-                            <div className="p-10 space-y-8">
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl">
-                                        <span className="text-xs font-black text-slate-900 uppercase">Classes 1st - 5th</span>
-                                        <span className="text-lg font-black text-violet-600">₹ 499 /-</span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl">
-                                        <span className="text-xs font-black text-slate-900 uppercase">Classes 6th - 10th</span>
-                                        <span className="text-lg font-black text-indigo-600">₹ 699 /-</span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl">
-                                        <span className="text-xs font-black text-slate-900 uppercase">Classes 11th - 12th</span>
-                                        <span className="text-lg font-black text-emerald-600">₹ 899 /-</span>
-                                    </div>
-                                </div>
-                                <div className="w-full h-px bg-slate-100" />
-                                <div className="text-left space-y-3">
-                                    {[
-                                        'Digital Report Included',
-                                        'Career Guide PDF Included',
-                                        'Certificate of Merit',
-                                        'Slot Choice Flexibility'
-                                    ].map(f => (
-                                        <div key={f} className="flex items-center gap-3 text-[11px] font-bold text-slate-400">
-                                            <CheckCircle2 size={12} className="text-violet-600" /> {f}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* School Card */}
-                        <div className="bg-white rounded-[60px] overflow-hidden shadow-2xl border border-slate-100 relative group scale-105 z-10 border-violet-200">
-                            <div className="bg-violet-600 p-10 text-white text-center space-y-2">
-                                <h3 className="text-3xl font-black uppercase tracking-tight">Participate Through School</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-300">Special Institutional Price</p>
-                            </div>
-                            <div className="p-10 space-y-8">
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-5 bg-violet-50 rounded-3xl">
-                                        <span className="text-xs font-black text-slate-900 uppercase">Classes 1st - 5th</span>
-                                        <span className="text-lg font-black text-violet-600">₹ 199 /-</span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-5 bg-violet-50 rounded-3xl">
-                                        <span className="text-xs font-black text-slate-900 uppercase">Classes 6th - 10th</span>
-                                        <span className="text-lg font-black text-indigo-600">₹ 299 /-</span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-5 bg-violet-50 rounded-3xl">
-                                        <span className="text-xs font-black text-slate-900 uppercase">Classes 11th - 12th</span>
-                                        <span className="text-lg font-black text-emerald-600">₹ 399 /-</span>
-                                    </div>
-                                </div>
-                                <div className="w-full h-px bg-violet-100" />
-                                <div className="text-left space-y-3">
-                                    {[
-                                        'Printed Report Included',
-                                        'Classroom Proctoring',
-                                        'Institutional Analysis',
-                                        'Topper Medals & Trophy'
-                                    ].map(f => (
-                                        <div key={f} className="flex items-center gap-3 text-[11px] font-bold text-slate-400">
-                                            <CheckCircle2 size={12} className="text-violet-600" /> {f}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Coordinator Section / Banner */}
-            <section className="py-28 px-6 bg-white overflow-hidden">
-                <div className="max-w-7xl mx-auto">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                        className="bg-indigo-600 rounded-[60px] p-16 text-center space-y-10 relative overflow-hidden shadow-2xl">
-                        {/* Decorative background overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 to-transparent" />
-                        <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-[100px]" />
-
-                        <div className="relative z-10 space-y-6">
-                            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">Become a Coordinator and<br />Start Working With Us</h2>
-                            <p className="text-indigo-100 font-bold max-w-2xl mx-auto leading-relaxed">
-                                Join our network of education professionals across India. Manage assessments for your region and empower students in your city.
-                            </p>
-                        </div>
-
-                        <div className="relative z-10 flex flex-col sm:flex-row gap-5 justify-center">
-                            <button className="px-14 py-6 bg-white text-indigo-600 rounded-[30px] font-black text-[13px] uppercase tracking-widest shadow-xl hover:bg-slate-100 transition-all active:scale-95">
-                                Become Coordinator
-                            </button>
-                            <button className="px-14 py-6 bg-indigo-900/40 text-white border border-white/20 rounded-[30px] font-black text-[13px] uppercase tracking-widest backdrop-blur-md hover:bg-white/10 transition-all active:scale-95">
-                                Learn More
-                            </button>
-                        </div>
+                        <div className="text-2xl font-black text-white">100</div>
+                        <div className="text-[9px] font-bold text-white/80 mt-0.5">Questions · Aptitude</div>
+                        <div className="h-px bg-white/20 my-3" />
+                        <div className="text-[10px] font-bold text-white/90">120 min · 10 careers</div>
                     </motion.div>
                 </div>
-            </section>
 
-            {/* Footer */}
-            <footer className="bg-slate-900 pt-32 pb-16 px-6 relative overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-violet-600 via-indigo-600 to-emerald-600" />
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid md:grid-cols-4 gap-16 mb-24">
-                        <div className="space-y-10 col-span-1 md:col-span-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                                    <Brain size={24} className="text-violet-600" />
-                                </div>
-                                <div className="flex flex-col -space-y-1">
-                                    <span className="text-2xl font-black tracking-tight text-white">IQ<span className="text-violet-500">Admin</span></span>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Diagnostic Division</span>
-                                </div>
-                            </div>
-                            <p className="max-w-md text-slate-500 font-bold leading-relaxed">
-                                Empowing the next generation of Indian scholars through data-driven cognitive diagnostics and expert psychometric insights.
-                            </p>
-                            <div className="flex gap-4">
-                                {['FB', 'TW', 'LN', 'IG'].map(s => (
-                                    <div key={s} className="w-10 h-10 border border-slate-800 rounded-xl flex items-center justify-center text-slate-600 font-black text-[10px] hover:border-violet-500 hover:text-white cursor-pointer transition-all">
-                                        {s}
-                                    </div>
-                                ))}
-                            </div>
+                {/* Certificate note strip */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-3xl p-5"
+                >
+                    <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                        <Award size={18} className="text-[#0845A5]" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-slate-900">Certificate & Report Included</p>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                            Every qualifying student receives a downloadable PDF report and an official A4 certificate.
+                        </p>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    </div>
+</section>
+
+            {/* Test Journey */}
+<section id="journey" className="relative py-28 px-6 bg-slate-50 overflow-hidden">
+
+    <div className="absolute top-0 right-0 w-[26rem] h-[26rem] bg-[#0845A5]/5 rounded-full blur-3xl -z-0" />
+    <div className="absolute bottom-0 left-0 w-[22rem] h-[22rem] bg-[#F14E2B]/5 rounded-full blur-3xl -z-0" />
+
+    <div className="max-w-7xl mx-auto relative z-10">
+
+        {/* Header */}
+        <div className="text-center mb-20">
+            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#F14E2B] mb-3 block">
+                From Test to Certificate
+            </span>
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+                Your Assessment <span className="text-[#0845A5]">Journey</span>
+            </h2>
+        </div>
+
+        {/* Connected steps — 3 cards linked by a line */}
+        <div className="relative">
+            {/* Connecting line (desktop only) */}
+            <div className="hidden md:block absolute top-24 left-[16.66%] right-[16.66%] h-0.5 bg-slate-200" />
+
+            <div className="grid md:grid-cols-3 gap-10 relative">
+                {[
+                    {
+                        step: '01',
+                        title: 'Take the Test',
+                        icon: Brain,
+                        color: '#0845A5',
+                        desc: 'Classes 1–5 attempt the 40-question IQ Test across 5 reasoning areas in 60 minutes. Classes 6–12 attempt the 100-question Career Aptitude Test across 10 disciplines in 120 minutes.',
+                        stat: '40 / 100',
+                        statLabel: 'Total Questions'
+                    },
+                    {
+                        step: '02',
+                        title: 'Score & Validation',
+                        icon: ShieldCheck,
+                        color: '#F14E2B',
+                        desc: 'Every response is scored automatically. If a student scores below the minimum threshold, a Retest is triggered — no result is generated until the benchmark is met.',
+                        stat: '11+ / 6+',
+                        statLabel: 'Min. Correct to Qualify'
+                    },
+                    {
+                        step: '03',
+                        title: 'Report & Certificate',
+                        icon: Award,
+                        color: '#0845A5',
+                        desc: 'A detailed area-wise performance report is generated with accuracy percentages, plus an official A4 certificate carrying the student\'s final score.',
+                        stat: '100%',
+                        statLabel: 'Digital & Printable'
+                    }
+                ].map((s, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.15 }}
+                        whileHover={{ y: -8 }}
+                        className="bg-white rounded-[2.5rem] p-9 border border-slate-200 shadow-lg shadow-slate-200/40 relative flex flex-col"
+                    >
+                        {/* Step number badge on the connecting line */}
+                        <div
+                            className="hidden md:flex absolute -top-[3.75rem] left-1/2 -translate-x-1/2 w-10 h-10 rounded-full items-center justify-center text-white text-xs font-black border-4 border-slate-50 z-10"
+                            style={{ backgroundColor: s.color }}
+                        >
+                            {s.step}
                         </div>
 
-                        <div className="space-y-10">
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Platform</h4>
-                            <ul className="space-y-4">
-                                {['IQ Diagnostic', 'Career Aptitude', 'Subject Eval', 'Reports Hub', 'Parent Portal'].map(l => (
-                                    <li key={l}><a href="#" className="text-[13px] font-black text-slate-700 hover:text-violet-500 transition-colors uppercase tracking-widest">{l}</a></li>
-                                ))}
-                            </ul>
+                        <div
+                            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
+                            style={{ backgroundColor: s.color, boxShadow: `0 10px 25px -5px ${s.color}40` }}
+                        >
+                            <s.icon size={28} className="text-white" />
                         </div>
 
-                        <div className="space-y-10">
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Quick Links</h4>
-                            <ul className="space-y-4">
-                                {['About Us', 'Contact', 'Terms', 'Privacy', 'School Login'].map(l => (
-                                    <li key={l}><a href="#" className="text-[13px] font-black text-slate-700 hover:text-violet-500 transition-colors uppercase tracking-widest">{l}</a></li>
-                                ))}
-                            </ul>
+                        <span className="md:hidden text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: s.color }}>
+                            Step {s.step}
+                        </span>
+
+                        <h3 className="text-xl font-black text-slate-900 mb-3">{s.title}</h3>
+                        <p className="text-sm text-slate-500 leading-relaxed mb-8 flex-1">{s.desc}</p>
+
+                        <div className="flex items-end justify-between pt-6 border-t border-slate-100">
+                            <div>
+                                <div className="text-2xl font-black" style={{ color: s.color }}>{s.stat}</div>
+                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{s.statLabel}</div>
+                            </div>
+                            <ArrowRight size={18} className="text-slate-300" />
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+
+        {/* Bottom info strip — retest rule called out clearly */}
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-14 flex flex-col md:flex-row items-center gap-6 bg-white rounded-3xl border border-slate-200 p-8"
+        >
+            <div className="w-14 h-14 rounded-2xl bg-[#0845A5]/10 flex items-center justify-center shrink-0">
+                <RotateCcw size={22} className="text-[#0845A5]" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+                <p className="text-sm font-black text-slate-900">Didn't meet the minimum score?</p>
+                <p className="text-sm text-slate-500 mt-1">
+                    No worries — the Retest option activates automatically, and you can attempt again until you cross the qualifying threshold. Reports and certificates are only issued for valid, qualifying attempts.
+                </p>
+            </div>
+        </motion.div>
+    </div>
+</section>
+
+            {/* Features of the Test */}
+<section id="features" className="relative py-28 px-6 bg-white overflow-hidden">
+
+    <div className="absolute top-1/3 right-0 w-[26rem] h-[26rem] bg-[#0845A5]/5 rounded-full blur-3xl -z-0" />
+
+    <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center relative z-10">
+
+        <div className="space-y-10">
+            <div className="space-y-4">
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#F14E2B] block">
+                    Built On Real Science
+                </span>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">
+                    What Makes Our <span className="text-[#0845A5]">Assessment Different</span>
+                </h2>
+            </div>
+
+            <div className="space-y-4">
+                {[
+                    {
+                        icon: Clock,
+                        title: 'Speed & Accuracy Both Matter',
+                        desc: 'For Classes 1–5, the IQ Score formula factors in time taken alongside correct answers — not accuracy alone.',
+                    },
+                    {
+                        icon: Layers,
+                        title: 'Two Purpose-Built Formats',
+                        desc: 'Classes 1–5 take a 40-question IQ Test across 5 reasoning areas. Classes 6–12 take a 100-question Career Aptitude Test spanning interest, personality, and academic proficiency.',
+                    },
+                    {
+                        icon: ShieldCheck,
+                        title: 'Built-In Validation System',
+                        desc: 'Attempts below the minimum qualifying score never generate a result — a Retest is triggered automatically until the benchmark is met.',
+                    },
+                    {
+                        icon: PieChart,
+                        title: 'Area-Wise Breakdown, Not Just One Score',
+                        desc: 'Every report shows accuracy in numbers and percentage across each individual area or subject — not just a single combined result.',
+                    }
+                ].map((f, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.08 }}
+                        whileHover={{ x: 8 }}
+                        className="flex items-start gap-5 p-6 rounded-3xl border border-slate-100 hover:border-[#0845A5]/30 hover:shadow-md transition-all"
+                    >
+                        <div className="w-12 h-12 rounded-2xl bg-[#0845A5] flex items-center justify-center shrink-0">
+                            <f.icon size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h4 className="font-black text-slate-900 text-sm mb-1.5">{f.title}</h4>
+                            <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+
+        {/* Right — Image + real formula callout instead of fabricated "did you know" stat */}
+        <div className="relative">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.94 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="rounded-[3rem] overflow-hidden aspect-[4/5] relative"
+            >
+                <img
+                    src="https://images.unsplash.com/photo-1491013516836-7dbf3d9d3f1a?auto=format&fit=crop&q=80&w=800"
+                    alt="Features"
+                    className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0845A5]/80 via-[#0845A5]/10 to-transparent" />
+
+                <div className="absolute inset-x-0 bottom-0 p-8">
+                    <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 p-7">
+                        <p className="text-[10px] font-black text-white/70 uppercase tracking-widest mb-3">
+                            The Actual Formula
+                        </p>
+                        <p className="text-white font-mono text-sm leading-relaxed mb-4">
+                            IQ Score = 40 + (3 × Correct) − 0.05 × (Time − 1)
+                        </p>
+                        <div className="h-px bg-white/20 mb-4" />
+                        <p className="text-white/80 text-xs leading-relaxed">
+                            Used for Classes 1–5, rounded to two decimal places at submission — so two students with the same score can rank differently based on how quickly they finished.
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+
+            <div className="absolute -top-16 -right-16 w-72 h-72 bg-[#F14E2B] rounded-full mix-blend-multiply filter blur-[100px] opacity-10 -z-10" />
+        </div>
+    </div>
+</section>
+
+            {/* Results Section */}
+            {/* Results Section */}
+<section className="relative py-32 px-6 bg-slate-950 overflow-hidden">
+
+    {/* Chaos background layer */}
+    <div className="absolute inset-0">
+        <div className="absolute top-0 left-1/4 w-[36rem] h-[36rem] bg-[#0845A5]/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[30rem] h-[30rem] bg-[#F14E2B]/20 rounded-full blur-[120px]" />
+        <div className="absolute inset-0 opacity-[0.04]"
+            style={{
+                backgroundImage: `linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)`,
+                backgroundSize: '60px 60px'
+            }}
+        />
+    </div>
+
+    <div className="max-w-7xl mx-auto relative z-10">
+
+        {/* Oversized diagonal headline */}
+        <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-20 text-center"
+        >
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#F14E2B] mb-4 block">
+                What Your Report Actually Looks Like
+            </span>
+            <h2 className="text-5xl md:text-7xl font-black text-white leading-[0.95] tracking-tight">
+                See Your Score.
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0845A5] to-[#F14E2B]">
+                    Own Your Story.
+                </span>
+            </h2>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-12 gap-8 items-center">
+
+            {/* LEFT — Floating live report mockup, spans 7 */}
+            <div className="lg:col-span-7 relative h-[560px]">
+
+                {/* Main report card */}
+                <motion.div
+                    initial={{ opacity: 0, rotateY: 20, scale: 0.9 }}
+                    whileInView={{ opacity: 1, rotateY: 0, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8 }}
+                    className="absolute inset-0 bg-white rounded-[2rem] p-8 shadow-2xl"
+                    style={{ transformStyle: 'preserve-3d' }}
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Career Aptitude Report</p>
+                            <p className="text-lg font-black text-slate-900">Interest & Personality Profile</p>
+                        </div>
+                        <div className="w-11 h-11 rounded-xl bg-[#0845A5] flex items-center justify-center">
+                            <FileBarChart size={20} className="text-white" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row items-center justify-between pt-16 border-t border-slate-800/50 gap-6">
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">© 2026 iq-admin diagnostic. All Rights Reserved.</p>
-                        <div className="flex items-center gap-8">
-                            <a href="#" className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">Safety Center</a>
-                            <a href="#" className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">Press Release</a>
+                    {/* Animated bars — real career disciplines from PDF */}
+                    <div className="space-y-3">
+                        {[
+                            { label: 'Administrative & Civil Services', pct: 17.02, color: '#0845A5' },
+                            { label: 'Medical Science & Healthcare', pct: 12.76, color: '#F14E2B' },
+                            { label: 'Defence, Police, Sports & Yoga', pct: 12.76, color: '#0845A5' },
+                            { label: 'Teaching, Coaching & Education', pct: 10.63, color: '#F14E2B' },
+                            { label: 'STEM', pct: 8.51, color: '#0845A5' },
+                        ].map((row, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -10 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.3 + i * 0.1 }}
+                            >
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[11px] font-bold text-slate-700">{row.label}</span>
+                                    <span className="text-[11px] font-black" style={{ color: row.color }}>{row.pct}%</span>
+                                </div>
+                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        whileInView={{ width: `${row.pct * 4.5}%` }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 1, delay: 0.4 + i * 0.1, ease: 'easeOut' }}
+                                        className="h-full rounded-full"
+                                        style={{ backgroundColor: row.color }}
+                                    />
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Grand Total</p>
+                            <p className="text-2xl font-black text-slate-900">47<span className="text-sm text-slate-400"> pts</span></p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full">
+                            <CheckCircle2 size={14} />
+                            <span className="text-[10px] font-black uppercase tracking-wider">Qualified</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Floating IQ badge — top right, animated float */}
+                <motion.div
+                    animate={{ y: [0, -14, 0] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="absolute -top-8 -right-8 bg-[#F14E2B] rounded-3xl px-7 py-5 shadow-2xl z-20"
+                >
+                    <p className="text-[9px] font-black text-white/70 uppercase tracking-widest mb-1">IQ Score</p>
+                    <p className="text-4xl font-black text-white">125<span className="text-lg">.135</span></p>
+                </motion.div>
+
+                {/* Floating certificate badge — bottom left, animated float */}
+                <motion.div
+                    animate={{ y: [0, 14, 0] }}
+                    transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut', delay: 0.5 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="absolute -bottom-8 -left-8 bg-white rounded-3xl px-6 py-4 shadow-2xl z-20 flex items-center gap-3"
+                >
+                    <div className="w-10 h-10 bg-[#0845A5] rounded-2xl flex items-center justify-center">
+                        <Award size={18} className="text-white" />
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</p>
+                        <p className="text-sm font-black text-slate-900">Certified</p>
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* RIGHT — Guidelines rebuilt as a vertical rail, spans 5 */}
+            <div className="lg:col-span-5 space-y-8">
+                <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                    Every attempt is scored, validated, and compiled into a report exactly like this — area-wise percentages, grand totals, and a certificate the moment you qualify.
+                </p>
+
+                <div className="relative pl-8 space-y-7 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gradient-to-b before:from-[#0845A5] before:to-[#F14E2B]">
+                    {[
+                        'Ensure a stable internet connection for the test window.',
+                        'Use a modern version of Chrome or Edge browser.',
+                        'Keep your school ID ready for initial verification.',
+                        'Test environment should be quiet and well-lit.',
+                        'Parent consent is mandatory for all primary students.'
+                    ].map((item, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: 20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1 }}
+                            className="relative"
+                        >
+                            <div className="absolute -left-8 top-0 w-6 h-6 rounded-full bg-slate-950 border-2 border-[#0845A5] flex items-center justify-center text-[10px] font-black text-white">
+                                {i + 1}
+                            </div>
+                            <p className="text-sm font-semibold text-slate-200 leading-relaxed">{item}</p>
+                        </motion.div>
+                    ))}
+                </div>
+
+                <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="group px-8 py-4 bg-white text-slate-900 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-2xl"
+                >
+                    Check Results Dashboard
+                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+            </div>
+        </div>
+    </div>
+</section>
+
+{/* Certificate & Report Preview */}
+<section className="relative py-28 px-6 bg-slate-50 overflow-hidden">
+
+    <div className="absolute top-0 left-0 w-[28rem] h-[28rem] bg-[#0845A5]/5 rounded-full blur-3xl -z-0" />
+    <div className="absolute bottom-0 right-0 w-[24rem] h-[24rem] bg-[#F14E2B]/5 rounded-full blur-3xl -z-0" />
+
+    <div className="max-w-7xl mx-auto relative z-10">
+
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto mb-20">
+            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#F14E2B] mb-3 block">
+                What You Walk Away With
+            </span>
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                Your Certificate &
+                <br />
+                <span className="text-[#0845A5]">Report, After the Test</span>
+            </h2>
+            <p className="text-slate-500 font-medium text-sm mt-6 leading-relaxed">
+                Once you complete the test, you'll instantly receive an official certificate and a detailed
+                area-wise report — just like this.
+            </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-10">
+
+            {/* Classes 1-5 group */}
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8"
+            >
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-11 h-11 rounded-2xl bg-[#0845A5] flex items-center justify-center shrink-0">
+                        <Brain size={20} className="text-white" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Classes 1–5</p>
+                        <p className="text-base font-black text-slate-900">IQ Test Certificate & Report</p>
+                    </div>
+                </div>
+
+                <div className="relative h-[420px]">
+                    <motion.img
+                        initial={{ opacity: 0, rotate: -4, y: 20 }}
+                        whileInView={{ opacity: 1, rotate: -4, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.1 }}
+                        src="/certificate-1-5.png"
+                        alt="Sample IQ Test Certificate for Classes 1 to 5"
+                        className="absolute top-0 left-0 w-[62%] rounded-2xl shadow-2xl border border-slate-100"
+                    />
+                    <motion.img
+                        initial={{ opacity: 0, rotate: 4, y: 20 }}
+                        whileInView={{ opacity: 1, rotate: 4, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.25 }}
+                        src="/report-1-5.png"
+                        alt="Sample IQ Test Report for Classes 1 to 5"
+                        className="absolute bottom-0 right-0 w-[62%] rounded-2xl shadow-2xl border border-slate-100"
+                    />
+                </div>
+            </motion.div>
+
+            {/* Classes 6-12 group */}
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.15 }}
+                className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8"
+            >
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-11 h-11 rounded-2xl bg-[#F14E2B] flex items-center justify-center shrink-0">
+                        <Briefcase size={20} className="text-white" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Classes 6–12</p>
+                        <p className="text-base font-black text-slate-900">Career Aptitude Test Report</p>
+                    </div>
+                </div>
+
+                <div className="relative h-[420px] flex items-center justify-center">
+                    <motion.img
+                        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        src="/certificate-6-12.png"
+                        alt="Sample Career Aptitude Test Report for Classes 6 to 12"
+                        className="max-h-full w-auto rounded-2xl shadow-2xl border border-slate-100"
+                    />
+                </div>
+            </motion.div>
+        </div>
+
+        {/* Bottom note strip */}
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-10 flex flex-col md:flex-row items-center gap-6 bg-white rounded-3xl border border-slate-200 p-8"
+        >
+            <div className="w-14 h-14 rounded-2xl bg-[#0845A5]/10 flex items-center justify-center shrink-0">
+                <Award size={22} className="text-[#0845A5]" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+                <p className="text-sm font-black text-slate-900">Signed, sealed, and downloadable</p>
+                <p className="text-sm text-slate-500 mt-1">
+                    Every certificate carries a verified score, director signatures, and an official seal —
+                    ready to download as a PDF the moment you qualify.
+                </p>
+            </div>
+        </motion.div>
+    </div>
+</section>
+
+
+            {/* Footer */}
+            <footer className="bg-slate-950 py-12 px-6 relative overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+                
+                {/* Background accent glow */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[32rem] h-[16rem] bg-[#0845A5]/10 rounded-full blur-[100px]" />
+                </div>
+
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 pb-8 border-b border-slate-900">
+                        
+                        {/* Left: Brand info & Tagline */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                            <img src="/logo-1.png" alt="Navodaya Wala" className="h-10 w-auto object-contain self-start sm:self-center" />
+                            <div className="h-px w-8 bg-slate-800 hidden sm:block" />
+                            <p className="text-xs text-slate-500 font-bold max-w-sm leading-relaxed">
+                                Empowering Indian scholars through data-driven cognitive diagnostics.
+                            </p>
+                        </div>
+
+                        {/* Right: Horizontal Navigation */}
+                        <div className="flex flex-wrap gap-x-6 gap-y-3">
+                            {[
+                                { label: 'About', href: '#about', type: 'anchor' },
+                                { label: 'Science', href: '#science', type: 'anchor' },
+                                { label: 'Journey', href: '#journey', type: 'anchor' },
+                                { label: 'Features', href: '#features', type: 'anchor' },
+                                { label: 'Reports', href: '#reports', type: 'anchor' },
+                                { label: 'Login', href: '/login', type: 'link' },
+                                { label: 'Register', href: '/login', type: 'link' },
+                            ].map(l => (
+                                l.type === 'anchor' ? (
+                                    <a key={l.label} href={l.href} className="text-xs font-black text-slate-300 hover:text-[#F14E2B] transition-all uppercase tracking-widest">
+                                        {l.label}
+                                    </a>
+                                ) : (
+                                    <Link key={l.label} to={l.href} className="text-xs font-black text-slate-300 hover:text-[#F14E2B] transition-all uppercase tracking-widest">
+                                        {l.label}
+                                    </Link>
+                                )
+                            ))}
+                        </div>
+
+                    </div>
+
+                    {/* Bottom strip */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between pt-8 gap-6">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            © 2026 Navodaya Wala. All Rights Reserved.
+                        </p>
+                        
+                        {/* Social Icons */}
+                        <div className="flex gap-3">
+                            {[
+                                {
+                                    name: 'Facebook',
+                                    href: '#',
+                                    svg: (
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.95z"/>
+                                        </svg>
+                                    )
+                                },
+                                {
+                                    name: 'Twitter',
+                                    href: '#',
+                                    svg: (
+                                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                        </svg>
+                                    )
+                                },
+                                {
+                                    name: 'LinkedIn',
+                                    href: '#',
+                                    svg: (
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                        </svg>
+                                    )
+                                },
+                                {
+                                    name: 'Instagram',
+                                    href: '#',
+                                    svg: (
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                                        </svg>
+                                    )
+                                }
+                            ].map(item => (
+                                <a
+                                    key={item.name}
+                                    href={item.href}
+                                    aria-label={item.name}
+                                    className="w-8 h-8 border border-slate-900 rounded-lg flex items-center justify-center text-slate-500 hover:border-[#F14E2B] hover:text-[#F14E2B] hover:bg-[#F14E2B]/5 cursor-pointer transition-all"
+                                >
+                                    {item.svg}
+                                </a>
+                            ))}
                         </div>
                     </div>
                 </div>

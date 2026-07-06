@@ -114,30 +114,64 @@ const assessmentSlice = createSlice({
             })
             .addCase(getQuizQuestions.fulfilled, (state, action) => {
                 state.loading = false;
+                
+                // Extract ExamType ID and Name from the first question in the nested structure
+                let firstExamType = null;
                 if (action.payload?.length > 0) {
-                    // Extract ExamType ID and Name from the first question
-                    state.examId = action.payload[0].examType?._id || action.payload[0].examId;
-                    state.examName = action.payload[0].examType?.examType || action.payload[0].examName || 'Assessment';
+                    const firstSection = action.payload[0];
+                    if (firstSection.chapters?.length > 0) {
+                        const firstChapter = firstSection.chapters[0];
+                        if (firstChapter.questions?.length > 0) {
+                            const firstQuestion = firstChapter.questions[0];
+                            firstExamType = firstQuestion.examType;
+                        }
+                    }
                 }
-                const grouped = action.payload.reduce((acc, q) => {
-                    const sectionName = q.section?.sectionName || 'General';
-                    if (!acc[sectionName]) acc[sectionName] = { title: sectionName, questions: [] };
-                    acc[sectionName].questions.push({
-                        id: q._id,
-                        type: q.chapter?.chapterName || 'Aptitude',
-                        question: q.questionText,
-                        options: [
-                            { key: 'A', text: q.options?.A?.text || q.options?.A || '' },
-                            { key: 'B', text: q.options?.B?.text || q.options?.B || '' },
-                            { key: 'C', text: q.options?.C?.text || q.options?.C || '' },
-                            { key: 'D', text: q.options?.D?.text || q.options?.D || '' }
-                        ],
-                        image: q.questionImage?.fileUrl,
-                        correctOption: q.correctAnswer
-                    });
-                    return acc;
-                }, {});
-                state.sections = Object.values(grouped);
+                if (firstExamType) {
+                    state.examId = firstExamType._id || firstExamType;
+                    state.examName = firstExamType.examType || 'Assessment';
+                }
+
+                // Map the hierarchical sections -> chapters -> questions to the format needed by Assessment.jsx
+                state.sections = (action.payload || []).map(sec => {
+                    const sectionName = sec.sectionName || 'General';
+                    const questions = [];
+                    const chapters = [];
+                    if (sec.chapters && Array.isArray(sec.chapters)) {
+                        for (const chap of sec.chapters) {
+                            const chapQuestions = [];
+                            if (chap.questions && Array.isArray(chap.questions)) {
+                                for (const q of chap.questions) {
+                                    const questionObj = {
+                                        id: q._id,
+                                        type: chap.chapterName || 'Aptitude',
+                                        question: q.questionText,
+                                        options: [
+                                            { key: 'A', text: q.options?.A?.text || q.options?.A || '' },
+                                            { key: 'B', text: q.options?.B?.text || q.options?.B || '' },
+                                            { key: 'C', text: q.options?.C?.text || q.options?.C || '' },
+                                            { key: 'D', text: q.options?.D?.text || q.options?.D || '' }
+                                        ],
+                                        image: q.questionImage?.fileUrl,
+                                        correctOption: q.correctAnswer
+                                    };
+                                    questions.push(questionObj);
+                                    chapQuestions.push(questionObj);
+                                }
+                            }
+                            chapters.push({
+                                id: chap._id,
+                                title: chap.chapterName || 'Aptitude',
+                                questions: chapQuestions
+                            });
+                        }
+                    }
+                    return {
+                        title: sectionName,
+                        questions,
+                        chapters
+                    };
+                });
             })
             .addCase(getQuizQuestions.rejected, (state, action) => {
                 state.loading = false;

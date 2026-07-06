@@ -11,6 +11,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import CareerAptitudeCertificate from '../components/CareerAptitudeCertificate';
 import { getQuizQuestions, submitAssessment, clearAssessment } from '../store/slices/assessmentSlice';
 import { downloadCertificate, downloadReport } from '../utils/api';
+const stripHtml = (html) => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+};
 
 const Assessment = ({ user }) => {
     const navigate = useNavigate();
@@ -27,6 +31,8 @@ const Assessment = ({ user }) => {
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
     const [expandedSections, setExpandedSections] = useState(new Set([0]));
     const [sidebarTab, setSidebarTab] = useState('palette');
+    const [isMobilePaletteOpen, setIsMobilePaletteOpen] = useState(false);
+    const [showSubmitModal, setShowSubmitModal] = useState(false);
 
     // Data States
     const [answers, setAnswers] = useState({});
@@ -57,7 +63,7 @@ const Assessment = ({ user }) => {
         if (!loading && sections.length > 0 && timeLeft > 0 && !isFinished) {
             const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
             return () => clearInterval(timer);
-        } else if (timeLeft === 0 && !loading) handleSubmit();
+        } else if (timeLeft === 0 && !loading) handleSubmit(true);
     }, [timeLeft, isFinished, loading, sections]);
 
     useEffect(() => {
@@ -98,7 +104,7 @@ const Assessment = ({ user }) => {
         return 'not-visited';
     };
 
-    const handleSubmit = async () => {
+    const executeSubmit = () => {
         let interestAnswers = [];
         let academicAnswers = [];
         let standardAnswers = [];
@@ -180,6 +186,155 @@ const Assessment = ({ user }) => {
         };
 
         dispatch(submitAssessment(payload));
+    };
+
+    const handleSubmit = (isAutoSubmit = false) => {
+        if (isAutoSubmit) {
+            executeSubmit();
+        } else {
+            setShowSubmitModal(true);
+        }
+    };
+
+    const renderSidebarContent = (showCloseButton = false) => {
+        return (
+            <>
+                {/* Section Navigation Tabs in Sidebar */}
+                <div className="p-4 border-b border-slate-200 bg-white shrink-0 flex items-center gap-2 shadow-sm">
+                    <div className="flex-1 flex gap-2">
+                        {sections.map((sec, sIdx) => {
+                            const isSectionActive = activeSection === sIdx;
+                            const sectionQuestions = sec.questions || [];
+                            const completedCount = sectionQuestions.filter((_, qIdx) => {
+                                const globalIdx = getGlobalIdx(sIdx, qIdx);
+                                return answers[globalIdx] !== undefined;
+                            }).length;
+
+                            return (
+                                <button
+                                    key={sIdx}
+                                    onClick={() => {
+                                        setActiveSection(sIdx);
+                                        setCurrentQuestionIdx(0);
+                                    }}
+                                    className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-[9px] md:text-[10px] font-black transition-all ${
+                                        isSectionActive
+                                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                    }`}
+                                >
+                                    <span>SEC {String.fromCharCode(65 + sIdx)}</span>
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[8px] md:text-[9px] ${
+                                        isSectionActive ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-400'
+                                    }`}>
+                                        {completedCount}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {showCloseButton && (
+                        <button
+                            onClick={() => setIsMobilePaletteOpen(false)}
+                            className="lg:hidden p-2 hover:bg-slate-100 rounded-xl text-slate-400"
+                        >
+                            <X size={18} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Sidebar Scrollable Area */}
+                <div className="flex-1 overflow-y-auto p-6 scroll-smooth space-y-6 scrollbar-none">
+                    {sections[activeSection]?.chapters?.map((chap, cIdx) => (
+                        <div key={chap.id || cIdx} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            {/* Chapter Header */}
+                            <button
+                                onClick={() => {
+                                    if (chap.questions && chap.questions.length > 0) {
+                                        const firstQuestionId = chap.questions[0].id;
+                                        const flatIdx = sections[activeSection].questions.findIndex(q => q.id === firstQuestionId);
+                                        if (flatIdx !== -1) {
+                                            setCurrentQuestionIdx(flatIdx);
+                                            setIsMobilePaletteOpen(false);
+                                        }
+                                    }
+                                }}
+                                className="w-full flex items-center justify-between p-4 bg-slate-50/50 hover:bg-slate-50 transition-colors border-b border-slate-100 text-left"
+                            >
+                                <span className="font-extrabold text-[10px] text-slate-800 uppercase tracking-wider">
+                                    {chap.title}
+                                </span>
+                                <span className="text-[9px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">
+                                    {chap.questions?.length || 0} Qs
+                                </span>
+                            </button>
+
+                            {/* Chapter Questions Palette Grid (Square Boxes) */}
+                            <div className="flex flex-wrap gap-2 p-4 bg-white">
+                                {chap.questions?.map((q) => {
+                                    const flatIdx = sections[activeSection].questions.findIndex(question => question.id === q.id);
+                                    const globalIdx = getGlobalIdx(activeSection, flatIdx);
+                                    const isCurrent = activeSection === activeSection && currentQuestionIdx === flatIdx;
+                                    const status = getStatus(globalIdx);
+
+                                    return (
+                                        <button
+                                            key={q.id}
+                                            onClick={() => {
+                                                if (flatIdx !== -1) {
+                                                    setCurrentQuestionIdx(flatIdx);
+                                                    setIsMobilePaletteOpen(false);
+                                                }
+                                            }}
+                                            className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all border-2 ${
+                                                isCurrent
+                                                    ? 'ring-2 ring-indigo-200 ring-offset-2 scale-110 z-10 border-indigo-600 bg-indigo-600 text-white'
+                                                    : status === 'answered'
+                                                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
+                                                    : status === 'marked'
+                                                    ? 'bg-amber-500 border-amber-500 text-white'
+                                                    : status === 'not-answered'
+                                                    ? 'bg-rose-500 border-rose-500 text-white'
+                                                    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            {flatIdx + 1}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Status Indicator Legend */}
+                    <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded bg-emerald-500" />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Answered</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded bg-rose-500" />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Unanswered</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded bg-white border-2 border-slate-200" />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Not Visited</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded bg-amber-500" />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Review</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sidebar Footer Submission Button */}
+                <div className="p-6 bg-white border-t border-slate-200 shrink-0">
+                    <button onClick={() => handleSubmit(false)} disabled={submitting} className="w-full py-3 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
+                        {submitting ? 'Syncing...' : 'Final Submission'}
+                    </button>
+                </div>
+            </>
+        );
     };
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" /></div>;
@@ -363,9 +518,7 @@ const Assessment = ({ user }) => {
                 {/* Real-time Exam Header */}
                 <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
                     <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center text-white">
-                            <Brain size={18} />
-                        </div>
+                        <img src="/logo-1.png" alt="Navodaya Wala" className="h-10 w-auto object-contain" />
                         <h1 className="text-sm font-black text-slate-900 uppercase tracking-tighter">
                             {isJunior ? 'IQ TEST' : 'CAREER APTITUDE TEST'}
                         </h1>
@@ -384,12 +537,183 @@ const Assessment = ({ user }) => {
                 </div>
 
                 <div className="flex-1 flex overflow-hidden">
-                    <div className="flex-1 flex flex-col overflow-hidden border-r border-slate-200 bg-white">
+                    {/* Mobile Sidebar Backdrop & Drawer (Animated via AnimatePresence) */}
+                    <AnimatePresence>
+                        {isMobilePaletteOpen && (
+                            <>
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] lg:hidden"
+                                    onClick={() => setIsMobilePaletteOpen(false)}
+                                />
+                                <motion.aside
+                                    initial={{ x: '-100%' }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: '-100%' }}
+                                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                    className="fixed inset-y-0 left-0 w-80 bg-slate-50 border-r border-slate-200 flex flex-col z-[10000] shadow-2xl lg:hidden overflow-hidden"
+                                >
+                                    {renderSidebarContent(true)}
+                                </motion.aside>
+                            </>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Static Desktop Sidebar */}
+                    <aside className="w-80 bg-slate-50 border-r border-slate-200 flex flex-col hidden lg:flex shrink-0">
+                        {renderSidebarContent(false)}
+                    </aside>
+
+                    {/* Hide the legacy inline sidebar code */}
+                    <div className="hidden">
+                        <aside className="hidden">
+                        {/* Section Navigation Tabs in Sidebar */}
+                        <div className="p-4 border-b border-slate-200 bg-white shrink-0 flex items-center gap-2 shadow-sm">
+                            <div className="flex-1 flex gap-2">
+                                {sections.map((sec, sIdx) => {
+                                    const isSectionActive = activeSection === sIdx;
+                                    const sectionQuestions = sec.questions || [];
+                                    const completedCount = sectionQuestions.filter((_, qIdx) => {
+                                        const globalIdx = getGlobalIdx(sIdx, qIdx);
+                                        return answers[globalIdx] !== undefined;
+                                    }).length;
+
+                                    return (
+                                        <button
+                                            key={sIdx}
+                                            onClick={() => {
+                                                setActiveSection(sIdx);
+                                                setCurrentQuestionIdx(0);
+                                            }}
+                                            className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-[9px] md:text-[10px] font-black transition-all ${
+                                                isSectionActive
+                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                                                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            <span>SEC {String.fromCharCode(65 + sIdx)}</span>
+                                            <span className={`px-1.5 py-0.5 rounded-full text-[8px] md:text-[9px] ${
+                                                isSectionActive ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-400'
+                                            }`}>
+                                                {completedCount}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <button
+                                onClick={() => setIsMobilePaletteOpen(false)}
+                                className="lg:hidden p-2 hover:bg-slate-100 rounded-xl text-slate-400"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Sidebar Scrollable Area */}
+                        <div className="flex-1 overflow-y-auto p-6 scroll-smooth space-y-6 scrollbar-none">
+                            {sections[activeSection]?.chapters?.map((chap, cIdx) => (
+                                <div key={chap.id || cIdx} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                    {/* Chapter Header */}
+                                    <button
+                                        onClick={() => {
+                                            if (chap.questions && chap.questions.length > 0) {
+                                                const firstQuestionId = chap.questions[0].id;
+                                                const flatIdx = sections[activeSection].questions.findIndex(q => q.id === firstQuestionId);
+                                                if (flatIdx !== -1) {
+                                                    setCurrentQuestionIdx(flatIdx);
+                                                }
+                                            }
+                                        }}
+                                        className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 border-b border-slate-200 transition-all text-left"
+                                    >
+                                        <span className="font-extrabold text-[10px] text-slate-800 uppercase tracking-wider">
+                                            {chap.title}
+                                        </span>
+                                        <span className="text-[9px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">
+                                            {chap.questions?.length || 0} Qs
+                                        </span>
+                                    </button>
+
+                                    {/* Chapter Questions Palette Grid (Square Boxes) */}
+                                    <div className="flex flex-wrap gap-2 p-4 bg-white">
+                                        {chap.questions?.map((q) => {
+                                            const flatIdx = sections[activeSection].questions.findIndex(question => question.id === q.id);
+                                            const globalIdx = getGlobalIdx(activeSection, flatIdx);
+                                            const isCurrent = activeSection === activeSection && currentQuestionIdx === flatIdx;
+                                            const status = getStatus(globalIdx);
+
+                                            return (
+                                                <button
+                                                    key={q.id}
+                                                    onClick={() => {
+                                                        if (flatIdx !== -1) {
+                                                            setCurrentQuestionIdx(flatIdx);
+                                                            setIsMobilePaletteOpen(false);
+                                                        }
+                                                    }}
+                                                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all border-2 ${
+                                                        isCurrent
+                                                            ? 'ring-2 ring-indigo-200 ring-offset-2 scale-110 z-10 border-indigo-600 bg-indigo-600 text-white'
+                                                            : status === 'answered'
+                                                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
+                                                            : status === 'marked'
+                                                            ? 'bg-amber-500 border-amber-500 text-white'
+                                                            : status === 'not-answered'
+                                                            ? 'bg-rose-500 border-rose-500 text-white'
+                                                            : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                                                    }`}
+                                                >
+                                                    {flatIdx + 1}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Status Indicator Legend */}
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded bg-emerald-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Answered</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded bg-rose-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Unanswered</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded bg-white border-2 border-slate-200" />
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Not Visited</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded bg-amber-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Review</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sidebar Footer Submission Button */}
+                        <div className="p-6 bg-white border-t border-slate-200 shrink-0">
+                            <button onClick={() => handleSubmit(false)} disabled={submitting} className="w-full py-3 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
+                                {submitting ? 'Syncing...' : 'Final Submission'}
+                            </button>
+                        </div>
+                        </aside>
+                    </div>
+
+                    {/* Right Main Question Area */}
+                    <div className="flex-1 flex flex-col overflow-hidden bg-white">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
                             <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Section {activeSection + 1}</span>
-                                <div className="h-3 w-px bg-slate-300" />
-                                <span className="text-xs font-bold text-slate-900 uppercase">{sections[activeSection]?.title || 'Loading...'}</span>
+                                <span className="text-xs font-black text-slate-900 uppercase tracking-wider">Section {String.fromCharCode(65 + activeSection)}</span>
+                                <button
+                                    onClick={() => setIsMobilePaletteOpen(true)}
+                                    className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-wider text-slate-600 transition-colors"
+                                >
+                                    <LayoutGrid size={12} /> Palette
+                                </button>
                             </div>
                             <div className="flex items-center gap-2 font-mono font-bold text-slate-700 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
                                 <Timer size={14} className={timeLeft < 300 ? 'text-rose-500' : 'text-slate-400'} />
@@ -397,9 +721,9 @@ const Assessment = ({ user }) => {
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 md:p-12 lg:p-16 custom-scrollbar">
-                            <div className="max-w-3xl mx-auto space-y-12">
-                                <div className="space-y-6">
+                        <div className="flex-1 overflow-y-auto py-6 px-6 md:px-12 lg:px-16 custom-scrollbar">
+                            <div className="max-w-full mx-auto space-y-6">
+                                <div className="space-y-3">
                                     <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] px-3 py-1 bg-indigo-50 rounded-lg">Question #{getGlobalIdx(activeSection, currentQuestionIdx) + 1}</span>
                                     <div
                                         className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight q-text-html"
@@ -408,17 +732,24 @@ const Assessment = ({ user }) => {
                                 </div>
 
                                 {currentQuestion?.image && (
-                                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl flex justify-center shadow-inner">
-                                        <img src={currentQuestion.image} alt="Diagnostic Context" className="max-h-[300px] rounded shadow-sm border border-white" />
+                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex justify-center shadow-inner">
+                                        <img src={currentQuestion.image} alt="Diagnostic Context" className="max-h-[220px] rounded shadow-sm border border-white" />
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 gap-4">
+                                <div className="grid grid-cols-1 gap-3.5">
                                     {currentQuestion?.options?.map((opt, idx) => (
                                         <button
                                             key={idx}
-                                            onClick={() => setAnswers(prev => ({ ...prev, [currentGlobalIdx]: idx }))}
-                                            className={`w-full flex items-center p-6 rounded-2xl border-2 transition-all text-left group ${answers[currentGlobalIdx] === idx
+                                            onClick={() => {
+                                                setAnswers(prev => ({ ...prev, [currentGlobalIdx]: idx }));
+                                                if (currentGlobalIdx < allQuestionsCount - 1) {
+                                                    setTimeout(() => {
+                                                        handleNext();
+                                                    }, 150);
+                                                }
+                                            }}
+                                            className={`w-full flex items-center p-4 md:p-3 rounded-2xl border-2 transition-all text-left group ${answers[currentGlobalIdx] === idx
                                                 ? 'border-indigo-600 bg-indigo-50/30'
                                                 : 'border-slate-100 hover:border-slate-300 bg-white'
                                                 }`}
@@ -448,87 +779,88 @@ const Assessment = ({ user }) => {
                                 </button>
                             </div>
 
-                            <button onClick={currentGlobalIdx === allQuestionsCount - 1 ? handleSubmit : handleNext} className="px-14 py-4 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-2xl shadow-slate-900/10 active:scale-95">
-                                {currentGlobalIdx === allQuestionsCount - 1 ? (submitting ? 'Authenticating...' : 'Submit & Finish') : 'Save & Continue'}
-                                {currentGlobalIdx !== allQuestionsCount - 1 && <ArrowRight size={18} />}
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleBack}
+                                    disabled={currentGlobalIdx === 0}
+                                    className="px-4 py-3 md:px-5 md:py-3 bg-white border border-slate-300 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center gap-2"
+                                >
+                                    <ArrowLeft size={16} />
+                                    <span className="hidden md:inline">Prev</span>
+                                </button>
+
+                                <button
+                                    onClick={currentGlobalIdx === allQuestionsCount - 1 ? () => handleSubmit(false) : handleNext}
+                                    className="px-4 py-3 md:px-5 md:py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all flex items-center gap-2 shadow-2xl shadow-slate-900/10 active:scale-95"
+                                >
+                                    {currentGlobalIdx === allQuestionsCount - 1 ? (
+                                        submitting ? (
+                                            'Syncing...'
+                                        ) : (
+                                            'Submit & Finish'
+                                        )
+                                    ) : (
+                                        <>
+                                            <span className="hidden md:inline">Next</span>
+                                            <ArrowRight size={16} />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <aside className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col hidden lg:flex shrink-0">
-                        <div className="flex border-b border-slate-200 bg-white shrink-0">
-                            <button onClick={() => setSidebarTab('palette')} className={`flex-1 flex items-center justify-center gap-2 py-5 text-[10px] font-black uppercase tracking-widest transition-all ${sidebarTab === 'palette' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/10' : 'text-slate-400'}`}>Palette</button>
-                            <button onClick={() => setSidebarTab('content')} className={`flex-1 flex items-center justify-center gap-2 py-5 text-[10px] font-black uppercase tracking-widest transition-all ${sidebarTab === 'content' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/10' : 'text-slate-400'}`}>By Section</button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                            {sidebarTab === 'palette' ? (
-                                <div className="space-y-10">
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {[...Array(allQuestionsCount)].map((_, i) => {
-                                            const status = getStatus(i);
-                                            return (
-                                                <button key={i} onClick={() => {
-                                                    let cumulative = 0;
-                                                    for (let sIdx = 0; sIdx < sections.length; sIdx++) {
-                                                        if (i < cumulative + sections[sIdx].questions.length) {
-                                                            setActiveSection(sIdx);
-                                                            setCurrentQuestionIdx(i - cumulative);
-                                                            break;
-                                                        }
-                                                        cumulative += sections[sIdx].questions.length;
-                                                    }
-                                                }}
-                                                    className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-black transition-all border-2 ${currentGlobalIdx === i ? 'ring-2 ring-indigo-200 ring-offset-4 scale-110 z-10' : ''
-                                                        } ${status === 'answered' ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' :
-                                                            status === 'marked' ? 'bg-amber-500 border-amber-500 text-white' :
-                                                                status === 'not-answered' ? 'bg-rose-500 border-rose-500 text-white' :
-                                                                    'bg-white border-slate-200 text-slate-400'
-                                                        }`}>
-                                                    {i + 1}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4 shadow-sm">
-                                        <div className="flex items-center gap-3"><div className="w-4 h-4 rounded bg-emerald-500" /><span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Answered</span></div>
-                                        <div className="flex items-center gap-3"><div className="w-4 h-4 rounded bg-rose-500" /><span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Unanswered</span></div>
-                                        <div className="flex items-center gap-3"><div className="w-4 h-4 rounded bg-white border-2 border-slate-200" /><span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Not Visited</span></div>
-                                        <div className="flex items-center gap-3"><div className="w-4 h-4 rounded bg-amber-500" /><span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Review</span></div>
-                                    </div>
+                    {/* Custom Submission Modal */}
+                    {showSubmitModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            {/* Translucent overlay with backdrop blur */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="fixed inset-0 bg-slate-900/60 backdrop-blur-md" 
+                                onClick={() => setShowSubmitModal(false)}
+                            />
+                            
+                            {/* Modal content box */}
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col items-center text-center space-y-6 relative z-10"
+                            >
+                                <div className="w-16 h-16 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500">
+                                    <AlertCircle size={32} />
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {sections.map((section, sIdx) => (
-                                        <div key={sIdx} className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
-                                            <button onClick={() => {
-                                                const next = new Set(expandedSections);
-                                                if (next.has(sIdx)) next.delete(sIdx); else next.add(sIdx);
-                                                setExpandedSections(next);
-                                            }} className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-all font-bold text-xs uppercase text-slate-900 tracking-tight">
-                                                {section.title}
-                                                {expandedSections.has(sIdx) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                            </button>
-                                            <AnimatePresence>
-                                                {expandedSections.has(sIdx) && (
-                                                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden bg-slate-50/30">
-                                                        {section.questions.map((_, qIdx) => (
-                                                            <button key={qIdx} onClick={() => { setActiveSection(sIdx); setCurrentQuestionIdx(qIdx); }} className={`w-full p-4 pl-10 text-left text-[11px] font-bold border-l-4 transition-all ${activeSection === sIdx && currentQuestionIdx === qIdx ? 'bg-indigo-50 text-indigo-700 border-indigo-600' : 'text-slate-500 border-transparent hover:bg-slate-50'}`}>Q{qIdx + 1}: Diagnostic Item</button>
-                                                        ))}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-                                    ))}
+                                
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-extrabold text-slate-900">
+                                        {Object.keys(answers).length < allQuestionsCount ? 'Unfinished Questions' : 'Confirm Submission'}
+                                    </h3>
+                                    <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                                        {Object.keys(answers).length < allQuestionsCount 
+                                            ? "You haven't visited or attended all the questions. So do you really want to submit?" 
+                                            : "Are you sure you want to submit your assessment? Once submitted, your answers cannot be modified."}
+                                    </p>
                                 </div>
-                            )}
+                                
+                                <div className="flex w-full gap-3">
+                                    <button 
+                                        onClick={() => setShowSubmitModal(false)}
+                                        className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-widest rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setShowSubmitModal(false);
+                                            executeSubmit();
+                                        }}
+                                        className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-rose-200"
+                                    >
+                                        Yes, Submit
+                                    </button>
+                                </div>
+                            </motion.div>
                         </div>
-                        <div className="p-6 bg-white border-t border-slate-200">
-                            <button onClick={handleSubmit} disabled={submitting} className="w-full py-4 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
-                                {submitting ? 'Syncing...' : 'Final Submission'}
-                            </button>
-                        </div>
-                    </aside>
+                    )}
                 </div>
             </div>
         </MainLayout>

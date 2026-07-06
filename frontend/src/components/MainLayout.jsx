@@ -20,7 +20,7 @@ const MainLayout = ({ user, children, isTesting = false }) => {
     ];
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-sans text-slate-900">
+        <div className={`${isTesting ? 'h-screen overflow-hidden' : 'min-h-screen'} bg-white flex flex-col font-sans text-slate-900`}>
             {/* Top Navigation - Udemy Style */}
             <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 md:px-8 shrink-0 z-[100] sticky top-0">
                 <div className="flex items-center gap-4">
@@ -30,10 +30,7 @@ const MainLayout = ({ user, children, isTesting = false }) => {
                         </button>
                     )}
                     <Link to="/dashboard" className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-violet-600 rounded flex items-center justify-center text-white">
-                            <Brain size={18} />
-                        </div>
-                        <span className="font-bold text-xl tracking-tight hidden sm:block">IQMastery</span>
+                        <img src="/logo-1.png" alt="Navodaya Wala" className="h-10 w-auto object-contain" />
                     </Link>
                 </div>
 
@@ -122,7 +119,7 @@ const MainLayout = ({ user, children, isTesting = false }) => {
                 )}
 
                 {/* Main View Area */}
-                <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+                <main className={`flex-1 bg-slate-50 relative ${isTesting ? 'h-full overflow-hidden' : 'overflow-y-auto'}`}>
                     {children}
                 </main>
             </div>

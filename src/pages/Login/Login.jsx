@@ -19,15 +19,12 @@ const Login = () => {
     return (
         <div className="min-h-screen w-full flex bg-[#fdfcff] font-sans overflow-hidden">
             {/* Left Side: Branding/Visual */}
-            <div className="hidden lg:flex lg:w-1/2 p-16 bg-[#f7f4ff] items-center justify-center relative">
-                <div className="absolute top-12 left-12 flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-violet-600 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-200 rotate-6">
-                        <ShieldCheck className="text-white w-7 h-7" />
-                    </div>
-                    <span className="text-2xl font-black tracking-tight text-slate-900">IQ Admin</span>
+            <div className="hidden lg:flex lg:w-1/2 p-16 bg-[#f7f4ff] flex-col justify-between relative">
+                <div>
+                    <img src="/logo-1.png" alt="Navodaya Wala" className="h-12 w-auto object-contain" />
                 </div>
 
-                <div className="max-w-lg w-full space-y-12 relative z-10">
+                <div className="max-w-lg w-full space-y-12 relative z-10 my-auto pt-16">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -83,9 +80,7 @@ const Login = () => {
                     className="w-full max-w-md space-y-12"
                 >
                     <div className="lg:hidden flex justify-center mb-8">
-                        <div className="w-14 h-14 bg-violet-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-violet-200">
-                            <ShieldCheck className="text-white w-7 h-7" />
-                        </div>
+                        <img src="/logo-1.png" alt="Navodaya Wala" className="h-12 w-auto object-contain" />
                     </div>
 
                     <div>
