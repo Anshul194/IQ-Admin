@@ -10,18 +10,121 @@ import {
 
 import {
     fetchExamTypes, createExamType, deleteExamType,
-    fetchSections, createSection, deleteSection,
-    fetchChapters, createChapter, deleteChapter,
+    fetchSections, createSection, updateSection, deleteSection,
+    fetchChapters, createChapter, updateChapter, deleteChapter,
     fetchQuestions, createQuestion, updateQuestion, deleteQuestion,
     createBatchQuestions
 } from '../../store/slices/quizSlice';
 import api from '../../utils/api';
 
 // --- Simple Editor ---
+// const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
+//     const containerRef = useRef(null);
+//     const quillRef = useRef(null);
+//     const isLocalChange = useRef(false);
+
+//     useEffect(() => {
+//         if (containerRef.current && !quillRef.current) {
+//             quillRef.current = new Quill(containerRef.current, {
+//                 theme: 'snow',
+//                 placeholder: placeholder || 'Type or drop content...',
+//                 modules: {
+//                     toolbar: [
+//                         ['bold', 'italic', 'underline'],
+//                         [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+//                         ['clean']
+//                     ],
+//                 }
+//             });
+//             quillRef.current.on('text-change', () => {
+//                 isLocalChange.current = true;
+//                 const html = quillRef.current.root.innerHTML;
+//                 onChange(html === '<p><br></p>' ? '' : html);
+//             });
+//         }
+//     }, [placeholder, onChange]);
+
+//     useEffect(() => {
+//         if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+//             if (!isLocalChange.current) {
+//                 quillRef.current.root.innerHTML = value || '';
+//             }
+//         }
+//         isLocalChange.current = false;
+//     }, [value]);
+
+//     return (
+//         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-500 transition-all shadow-sm">
+//             <div ref={containerRef} className="quill-simple-editor text-sm font-normal" style={{ minHeight }} />
+//         </div>
+//     );
+// };
+
+// --- Enhanced Editor with Image, Video & More ---
 const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
     const containerRef = useRef(null);
     const quillRef = useRef(null);
     const isLocalChange = useRef(false);
+
+    // Image Upload Handler
+    const imageHandler = () => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (!file) return;
+
+            const quill = quillRef.current;
+            const range = quill.getSelection(true);
+
+            // Optional: Show loading placeholder
+            quill.insertEmbed(range.index, 'image', 'https://i.imgur.com/loading.gif');
+            quill.setSelection(range.index + 1);
+
+            try {
+                // Replace with your actual upload API
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const res = await api.post('/upload', formData, { // ← Change endpoint as needed
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                const imageUrl = res.data.url || res.data.imageUrl;
+
+                // Replace loading placeholder with real image
+                quill.deleteText(range.index, 1);
+                quill.insertEmbed(range.index, 'image', imageUrl);
+                quill.setSelection(range.index + 1);
+            } catch (err) {
+                console.error('Image upload failed', err);
+                quill.deleteText(range.index, 1);
+                alert('Failed to upload image');
+            }
+        };
+    };
+
+    // Video Handler (YouTube embed or direct video)
+    const videoHandler = () => {
+        const url = prompt('Enter Video URL (YouTube, Vimeo, or direct mp4 link):');
+        if (!url) return;
+
+        const quill = quillRef.current;
+        const range = quill.getSelection(true);
+
+        // Basic YouTube support
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            const videoId = url.split('v=')[1] || url.split('/').pop();
+            const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            quill.insertEmbed(range.index, 'video', embedUrl);
+        } else {
+            quill.insertEmbed(range.index, 'video', url);
+        }
+        quill.setSelection(range.index + 1);
+    };
 
     useEffect(() => {
         if (containerRef.current && !quillRef.current) {
@@ -29,13 +132,23 @@ const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
                 theme: 'snow',
                 placeholder: placeholder || 'Type or drop content...',
                 modules: {
-                    toolbar: [
-                        ['bold', 'italic', 'underline'],
-                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                        ['clean']
-                    ],
+                    toolbar: {
+                        container: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            [{ 'align': [] }],
+                            ['link', 'image', 'video'],
+                            ['clean']
+                        ],
+                        handlers: {
+                            image: imageHandler,
+                            video: videoHandler,
+                        }
+                    }
                 }
             });
+
             quillRef.current.on('text-change', () => {
                 isLocalChange.current = true;
                 const html = quillRef.current.root.innerHTML;
@@ -168,7 +281,11 @@ const QuizSet = () => {
 
     const handleCreateSection = (e) => {
         e.preventDefault();
-        dispatch(createSection({ sectionName: e.target.sectionName.value, examType: modal.parentId }));
+        const sectionExam = examTypes.find(ex => ex._id === modal.parentId);
+        const isAptitude = sectionExam && parseInt(sectionExam.className) > 5;
+        const payload = { sectionName: e.target.sectionName.value, examType: modal.parentId };
+        if (isAptitude && e.target.sectionType?.value) payload.sectionType = e.target.sectionType.value;
+        dispatch(createSection(payload));
         setExpandedExams(p => ({ ...p, [modal.parentId]: true }));
         closeModal();
     };
@@ -180,17 +297,47 @@ const QuizSet = () => {
         closeModal();
     };
 
+    const handleUpdateSection = (e) => {
+        e.preventDefault();
+        const sectionExam = examTypes.find(ex => ex._id === modal.parentId);
+        const isAptitude = sectionExam && parseInt(sectionExam.className) > 5;
+        const payload = { sectionName: e.target.sectionName.value };
+        if (isAptitude && e.target.sectionType?.value) payload.sectionType = e.target.sectionType.value;
+        dispatch(updateSection({ id: modal.data._id, data: payload }));
+        closeModal();
+    };
+
+    const handleUpdateChapter = (e) => {
+        e.preventDefault();
+        dispatch(updateChapter({ id: modal.data._id, data: { chapterName: e.target.chapterName.value, sequence: parseInt(e.target.sequence.value) || 1 } }));
+        setExpandedSections(p => ({ ...p, [modal.parentId]: true }));
+        closeModal();
+    };
+
     const defaultOption = () => ({ text: '', traitMapping: 'NONE', careerPairIndex: null });
 
     const openQuestionAdd = (examId, sectionId, chapterId) => {
         setActiveContext({ examId, sectionId, chapterId });
-        setEditQuestionData({ questionText: '', options: { A: defaultOption(), B: defaultOption(), C: defaultOption(), D: defaultOption() }, correctAnswer: 'A' });
+        const sec = sections.find(s => s._id === sectionId);
+        setEditQuestionData({ questionText: '', options: { A: defaultOption(), B: defaultOption(), C: defaultOption(), D: defaultOption() }, correctAnswer: 'A', questionType: sec?.sectionType || null });
         setViewMode('add_question');
     };
 
     const openQuestionEdit = (q, examId, sectionId, chapterId) => {
         setActiveContext({ examId, sectionId, chapterId });
-        setEditQuestionData({ ...q });
+        const sec = sections.find(s => s._id === sectionId);
+        setEditQuestionData({
+            ...q,
+            questionText: q.questionText || '',
+            options: {
+                A: { text: '', traitMapping: 'NONE', careerPairIndex: null, ...(q.options?.A || {}) },
+                B: { text: '', traitMapping: 'NONE', careerPairIndex: null, ...(q.options?.B || {}) },
+                C: { text: '', traitMapping: 'NONE', careerPairIndex: null, ...(q.options?.C || {}) },
+                D: { text: '', traitMapping: 'NONE', careerPairIndex: null, ...(q.options?.D || {}) },
+            },
+            correctAnswer: q.correctAnswer || 'A',
+            questionType: q.questionType || sec?.sectionType || null,
+        });
         setViewMode('edit_question');
     };
 
@@ -198,7 +345,8 @@ const QuizSet = () => {
         setEditQuestionData({
             questionText: '',
             options: { A: defaultOption(), B: defaultOption(), C: defaultOption(), D: defaultOption() },
-            correctAnswer: 'A'
+            correctAnswer: 'A',
+            questionType: null
         });
     };
 
@@ -211,6 +359,7 @@ const QuizSet = () => {
             options: editQuestionData.options,
             correctAnswer: editQuestionData.correctAnswer,
             isTraitBased: isAptitudeClass,
+            questionType: editQuestionData.questionType || null,
             examType: activeContext.examId,
             section: activeContext.sectionId,
             chapter: activeContext.chapterId
@@ -226,8 +375,13 @@ const QuizSet = () => {
 
     if (viewMode === 'add_question' || viewMode === 'edit_question') {
         const activeExam = examTypes.find(e => e._id === activeContext.examId);
+        const activeSection = sections.find(s => s._id === activeContext.sectionId);
         const activeChapter = chapters.find(c => c._id === activeContext.chapterId);
         const isAptitudeClass = parseInt(activeExam?.className) > 5;
+        const sectionType = activeSection?.sectionType || null;
+        const questionType = editQuestionData.questionType || sectionType || null;
+        const isTraitwise = isAptitudeClass && questionType === 'traitwise';
+        const showTraitUI = isTraitwise;
         const chapterSeq = Number(activeChapter?.sequence);
         const activePair = aptConfig?.careerPairs?.find(p => Number(p.chapterSequence) === chapterSeq) || null;
 
@@ -248,14 +402,25 @@ const QuizSet = () => {
                             <SimpleEditor value={editQuestionData.questionText} onChange={(v) => setEditQuestionData(p => ({ ...p, questionText: v }))} placeholder="Type the question..." />
                         </div>
 
+                        {isAptitudeClass && (
+                            <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                                <span className="text-sm font-bold text-slate-700">Question Type</span>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setEditQuestionData(p => ({ ...p, questionType: 'valuewise' }))} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${questionType !== 'traitwise' ? 'bg-teal-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>Valuewise</button>
+                                    <button type="button" onClick={() => setEditQuestionData(p => ({ ...p, questionType: 'traitwise' }))} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${questionType === 'traitwise' ? 'bg-violet-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>Traitwise</button>
+                                </div>
+                                <span className="text-[11px] text-slate-400 font-medium">Defaults to the section type ({sectionType || '—'}).</span>
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-3">Answer Choices</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {['A', 'B', 'C', 'D'].map(k => (
-                                    <div key={k} className={`p-5 rounded-2xl border transition-all ${editQuestionData.correctAnswer === k && !isAptitudeClass ? 'border-indigo-500 bg-indigo-50/30 shadow-sm ring-4 ring-indigo-50/50' : 'border-slate-200 bg-white'}`}>
+                                    <div key={k} className={`p-5 rounded-2xl border transition-all ${editQuestionData.correctAnswer === k && !isTraitwise ? 'border-indigo-500 bg-indigo-50/30 shadow-sm ring-4 ring-indigo-50/50' : 'border-slate-200 bg-white'}`}>
                                         <div className="flex items-center justify-between mb-4">
                                             <span className="font-bold text-slate-700">Option {k}</span>
-                                            {!isAptitudeClass && (
+                                            {!isTraitwise && (
                                                 <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
                                                     <input type="radio" checked={editQuestionData.correctAnswer === k} onChange={() => setEditQuestionData(p => ({ ...p, correctAnswer: k }))} className="w-4 h-4 text-indigo-600 focus:ring-indigo-500" /> Correct
                                                 </label>
@@ -263,7 +428,7 @@ const QuizSet = () => {
                                         </div>
                                         <SimpleEditor value={editQuestionData.options[k].text} onChange={(v) => setEditQuestionData(p => ({ ...p, options: { ...p.options, [k]: { ...p.options[k], text: v } } }))} minHeight="80px" />
 
-                                        {isAptitudeClass && (
+                                        {showTraitUI && (
                                             <div className="mt-4 pt-4 border-t border-slate-100">
                                                 <label className="text-xs font-bold text-slate-500 mb-2 block">Trait Mapping</label>
                                                 {aptConfig?.careerPairs?.length ? (
@@ -401,6 +566,9 @@ const QuizSet = () => {
                                                 <div className="col-span-4 flex items-center gap-3">
                                                     <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><Layers size={14} /></div>
                                                     <span className="font-semibold text-slate-700">{seq.sectionName}</span>
+                                                    {seq.sectionType && (
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${seq.sectionType === 'traitwise' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>{seq.sectionType}</span>
+                                                    )}
                                                 </div>
                                                 <div className="col-span-3 text-xs text-slate-400 uppercase tracking-widest font-semibold">Section</div>
                                                 <div className="col-span-2 text-sm text-slate-500">{sectionChapters.length} Chapters</div>
@@ -408,6 +576,7 @@ const QuizSet = () => {
                                                     <button onClick={() => { setActiveContext({ examId: exam._id }); setModal({ open: true, type: 'chapter', parentId: seq._id }); }} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm">
                                                         <Plus size={12} /> Add Chapter
                                                     </button>
+                                                    <button onClick={() => setModal({ open: true, type: 'edit_section', parentId: exam._id, data: seq })} className="p-1.5 border border-transparent text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"><Edit2 size={14} /></button>
                                                     <button onClick={() => setDeleteTarget({ id: seq._id, type: 'section', name: seq.sectionName })} className="p-1.5 border border-transparent text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
                                                 </div>
                                             </div>
@@ -440,6 +609,7 @@ const QuizSet = () => {
                                                                 <button onClick={() => openQuestionAdd(exam._id, seq._id, chap._id)} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm">
                                                                     <Plus size={12} /> Add Q's
                                                                 </button>
+                                                                <button onClick={() => setModal({ open: true, type: 'edit_chapter', parentId: seq._id, data: chap })} className="p-1.5 border border-transparent text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"><Edit2 size={14} /></button>
                                                                 <button onClick={() => setDeleteTarget({ id: chap._id, type: 'chapter', name: chap.chapterName })} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
                                                             </div>
                                                         </div>
@@ -461,19 +631,28 @@ const QuizSet = () => {
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody className="divide-y divide-slate-100">
-                                                                                {chapQuestions.map((q, idx) => (
+                                                                                {chapQuestions.map((q, idx) => {
+                                                                                    const isTraitwiseQ = q.questionType === 'traitwise' || (q.questionType == null && seq.sectionType === 'traitwise');
+                                                                                    return (
                                                                                     <tr key={q._id} className="hover:bg-slate-50/50">
                                                                                         <td className="p-4 align-top font-bold text-slate-400">{idx + 1}</td>
                                                                                         <td className="p-4 align-top">
                                                                                             <div className="prose prose-sm text-slate-700 max-w-full truncate overflow-hidden line-clamp-3" dangerouslySetInnerHTML={{ __html: q.questionText }} />
                                                                                         </td>
-                                                                                        <td className="p-4 align-top font-black text-emerald-600">Option {q.correctAnswer}</td>
+                                                                                        <td className="p-4 align-top">
+                                                                                            {isTraitwiseQ ? (
+                                                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-100 text-violet-700">Traitwise</span>
+                                                                                            ) : (
+                                                                                                <span className="font-black text-emerald-600">Option {q.correctAnswer}</span>
+                                                                                            )}
+                                                                                        </td>
                                                                                         <td className="p-4 align-top text-right">
                                                                                             <button onClick={() => openQuestionEdit(q, exam._id, seq._id, chap._id)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 size={14} /></button>
                                                                                             <button onClick={() => setDeleteTarget({ id: q._id, type: 'question', name: 'Question' })} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors ml-1"><Trash2 size={14} /></button>
                                                                                         </td>
                                                                                     </tr>
-                                                                                ))}
+                                                                                    );
+                                                                                })}
                                                                             </tbody>
                                                                         </table>
                                                                     )}
@@ -529,7 +708,42 @@ const QuizSet = () => {
                 <form onSubmit={handleCreateSection} className="space-y-4">
                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Section Alias</label>
                         <input name="sectionName" required className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" placeholder="e.g. Mathematics Module" /></div>
+                    {(() => {
+                        const sectionExam = examTypes.find(ex => ex._id === modal.parentId);
+                        const isAptitude = sectionExam && parseInt(sectionExam.className) > 5;
+                        if (!isAptitude) return null;
+                        return (
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Section Type</label>
+                                <select name="sectionType" defaultValue="valuewise" required className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none bg-white">
+                                    <option value="valuewise">Valuewise (pair traits)</option>
+                                    <option value="traitwise">Traitwise (select traits)</option>
+                                </select>
+                                <p className="text-[10px] text-slate-400 font-medium mt-1">Traitwise questions let you pick traits directly; Valuewise uses the normal career-pair selection.</p>
+                            </div>
+                        );
+                    })()}
                     <button type="submit" className="w-full bg-blue-600 text-white font-bold rounded-lg p-3 hover:bg-slate-900 transition-colors mt-2">Save Section</button>
+                </form>
+            </Modal>
+
+            <Modal isOpen={modal.open && modal.type === 'edit_section'} onClose={closeModal} title="Edit Section">
+                <form onSubmit={handleUpdateSection} className="space-y-4">
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Section Alias</label>
+                        <input name="sectionName" required defaultValue={modal.data?.sectionName || ''} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" /></div>
+                    {(() => {
+                        const sectionExam = examTypes.find(ex => ex._id === modal.parentId);
+                        const isAptitude = sectionExam && parseInt(sectionExam.className) > 5;
+                        if (!isAptitude) return null;
+                        return (
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Section Type</label>
+                                <select name="sectionType" defaultValue={modal.data?.sectionType || 'valuewise'} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none bg-white">
+                                    <option value="valuewise">Valuewise (pair traits)</option>
+                                    <option value="traitwise">Traitwise (select traits)</option>
+                                </select>
+                            </div>
+                        );
+                    })()}
+                    <button type="submit" className="w-full bg-blue-600 text-white font-bold rounded-lg p-3 hover:bg-slate-900 transition-colors mt-2">Update Section</button>
                 </form>
             </Modal>
 
@@ -546,6 +760,16 @@ const QuizSet = () => {
                                 return existing.length > 0 ? Math.max(...existing.map(c => c.sequence || 0)) + 1 : 1;
                             })()} /></div>
                     <button type="submit" className="w-full bg-violet-600 text-white font-bold rounded-lg p-3 hover:bg-slate-900 transition-colors mt-2">Add Chapter Node</button>
+                </form>
+            </Modal>
+
+            <Modal isOpen={modal.open && modal.type === 'edit_chapter'} onClose={closeModal} title="Edit Chapter">
+                <form onSubmit={handleUpdateChapter} className="space-y-4">
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Chapter Heading</label>
+                        <input name="chapterName" required defaultValue={modal.data?.chapterName || ''} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ch. Sequence Rank</label>
+                        <input name="sequence" type="number" required defaultValue={modal.data?.sequence ?? 1} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none" /></div>
+                    <button type="submit" className="w-full bg-violet-600 text-white font-bold rounded-lg p-3 hover:bg-slate-900 transition-colors mt-2">Update Chapter</button>
                 </form>
             </Modal>
 
