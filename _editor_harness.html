@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="node_modules/quill/dist/quill.snow.css">
+  <style>
+    .ql-editor img { max-width: 100%; height: auto; display: block; }
+  </style>
+</head>
+<body>
+  <div id="editor" class="quill-simple-editor"></div>
+  <script src="node_modules/quill/dist/quill.js"></script>
+  <script>
+    const IMAGE_URL = 'http://localhost:5000/uploads/led3-1783682254849.jpg';
+    const PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'40\'><rect width=\'80\' height=\'40\' fill=\'%23e2e8f0\'/></svg>';
+
+    let quillRef = { current: null };
+    let lastEmitted = { current: null };
+    let value = '<p>Existing question with <img src="' + IMAGE_URL + '"> image</p>';
+
+    function onChange(html) { value = html; }
+
+    function initEffect() {
+      if (!document.getElementById('editor') || quillRef.current) return;
+      const containerEl = document.getElementById('editor');
+      const quill = new Quill(containerEl, { theme: 'snow' });
+      quillRef.current = quill;
+      quill.on('text-change', () => {
+        const html = quill.root.innerHTML;
+        lastEmitted.current = html;
+        onChange(html === '<p><br></p>' ? '' : html);
+      });
+      window.__onDrop = () => {};
+      window.__onPaste = () => {};
+      return function cleanup() {
+        quillRef.current = null;
+        lastEmitted.current = null;
+        containerEl.innerHTML = '';
+      };
+    }
+
+    function valueSyncEffect() {
+      if (!quillRef.current) return;
+      if (value !== lastEmitted.current) {
+        quillRef.current.root.innerHTML = value || '';
+        lastEmitted.current = value || '';
+      }
+    }
+
+    // --- Simulate React StrictMode: setup -> cleanup -> setup ---
+    const cleanup = initEffect();
+    valueSyncEffect();
+    cleanup();
+    initEffect();
+    valueSyncEffect();
+
+    window.runUpload = async function () {
+      const quill = quillRef.current;
+      quill.insertEmbed(0, 'image', PLACEHOLDER);
+      quill.setSelection(1);
+      // simulate network delay
+      await new Promise(r => setTimeout(r, 300));
+      quill.deleteText(0, 1);
+      quill.insertEmbed(0, 'image', IMAGE_URL);
+      quill.setSelection(1);
+    };
+
+    window.getState = function () {
+      const img = quillRef.current ? quillRef.current.root.querySelector('img') : null;
+      return {
+        html: quillRef.current ? quillRef.current.root.innerHTML : 'NO QUILL',
+        imgCount: quillRef.current ? quillRef.current.root.querySelectorAll('img').length : -1,
+        lastEmitted: lastEmitted.current,
+        value: value
+      };
+    };
+  </script>
+</body>
+</html>

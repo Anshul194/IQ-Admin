@@ -1,19 +1,18 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import {
     ChevronDown, ChevronRight, Plus, Trash2, Edit2,
-    Layers, BookOpen, FileText, Settings, AlignLeft, X, AlertTriangle, Loader2
+    Layers, BookOpen, FileText, X, AlertTriangle, Loader2
 } from 'lucide-react';
 
 import {
     fetchExamTypes, createExamType, deleteExamType,
     fetchSections, createSection, updateSection, deleteSection,
     fetchChapters, createChapter, updateChapter, deleteChapter,
-    fetchQuestions, createQuestion, updateQuestion, deleteQuestion,
-    createBatchQuestions
+    fetchQuestions, createQuestion, updateQuestion, deleteQuestion
 } from '../../store/slices/quizSlice';
 import api from '../../utils/api';
 
@@ -64,106 +63,170 @@ import api from '../../utils/api';
 const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
     const containerRef = useRef(null);
     const quillRef = useRef(null);
-    const isLocalChange = useRef(false);
+    const lastEmitted = useRef(null);
 
-    // Image Upload Handler
-    const imageHandler = () => {
+    const LOADING_PLACEHOLDER =
+        'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'40\'><rect width=\'80\' height=\'40\' fill=\'%23e2e8f0\'/><text x=\'40\' y=\'25\' font-size=\'12\' fill=\'%2394a3b8\' text-anchor=\'middle\' font-family=\'sans-serif\'>Uploading…</text></svg>';
+
+    // Upload an image file to the server (POST /api/v1/upload) and insert the returned URL.
+    const uploadImage = useCallback(async (file, index) => {
+        const quill = quillRef.current;
+        if (!quill || !file) return;
+
+        // Inline placeholder (no external dependency) shown while uploading
+        quill.insertEmbed(index, 'image', LOADING_PLACEHOLDER);
+        quill.setSelection(index + 1);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Let the browser set the multipart boundary (don't force application/json,
+            // otherwise axios serializes FormData to "{}").
+            const res = await api.post('/upload', formData, {
+                headers: { 'Content-Type': undefined },
+            });
+            const imageUrl = res?.data?.url || res?.url;
+
+            // Replace loading placeholder with the real uploaded image
+            quill.deleteText(index, 1);
+            if (imageUrl) {
+                quill.insertEmbed(index, 'image', imageUrl);
+                quill.setSelection(index + 1);
+            }
+        } catch (err) {
+            console.error('Image upload failed', err);
+            quill.deleteText(index, 1);
+        }
+    }, []);
+
+    // Image Upload Handler (toolbar button)
+    const imageHandler = useCallback(() => {
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
         input.setAttribute('accept', 'image/*');
         input.click();
 
         input.onchange = async () => {
-            const file = input.files[0];
+            const file = input.files?.[0];
             if (!file) return;
 
             const quill = quillRef.current;
             const range = quill.getSelection(true);
-
-            // Optional: Show loading placeholder
-            quill.insertEmbed(range.index, 'image', 'https://i.imgur.com/loading.gif');
-            quill.setSelection(range.index + 1);
-
-            try {
-                // Replace with your actual upload API
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const res = await api.post('/upload', formData, { // ← Change endpoint as needed
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-
-                const imageUrl = res.data.url || res.data.imageUrl;
-
-                // Replace loading placeholder with real image
-                quill.deleteText(range.index, 1);
-                quill.insertEmbed(range.index, 'image', imageUrl);
-                quill.setSelection(range.index + 1);
-            } catch (err) {
-                console.error('Image upload failed', err);
-                quill.deleteText(range.index, 1);
-                alert('Failed to upload image');
-            }
+            uploadImage(file, range.index);
         };
+    }, [uploadImage]);
+
+    // Build a safe embed URL; only allow http(s) and validate YouTube IDs.
+    const sanitizeVideoUrl = (raw) => {
+        try {
+            const parsed = new URL(raw.trim());
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+            if (parsed.hostname.includes('youtube.com') || parsed.hostname.includes('youtu.be')) {
+                let id = parsed.searchParams.get('v');
+                if (!id && parsed.hostname === 'youtu.be') id = parsed.pathname.slice(1);
+                if (!id || !/^[A-Za-z0-9_-]{6,}$/.test(id)) return null;
+                return `https://www.youtube.com/embed/${id}`;
+            }
+            return parsed.toString();
+        } catch {
+            return null;
+        }
     };
 
     // Video Handler (YouTube embed or direct video)
-    const videoHandler = () => {
+    const videoHandler = useCallback(() => {
         const url = prompt('Enter Video URL (YouTube, Vimeo, or direct mp4 link):');
         if (!url) return;
 
+        const embedUrl = sanitizeVideoUrl(url);
+        if (!embedUrl) {
+            console.warn('Invalid or unsupported video URL');
+            return;
+        }
+
         const quill = quillRef.current;
         const range = quill.getSelection(true);
-
-        // Basic YouTube support
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            const videoId = url.split('v=')[1] || url.split('/').pop();
-            const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-            quill.insertEmbed(range.index, 'video', embedUrl);
-        } else {
-            quill.insertEmbed(range.index, 'video', url);
-        }
+        quill.insertEmbed(range.index, 'video', embedUrl);
         quill.setSelection(range.index + 1);
-    };
+    }, []);
 
+    // Initialize Quill exactly once. onChange uses a functional updater, so the
+    // captured closure stays valid for the component's lifetime.
     useEffect(() => {
-        if (containerRef.current && !quillRef.current) {
-            quillRef.current = new Quill(containerRef.current, {
-                theme: 'snow',
-                placeholder: placeholder || 'Type or drop content...',
-                modules: {
-                    toolbar: {
-                        container: [
-                            [{ 'header': [1, 2, 3, false] }],
-                            ['bold', 'italic', 'underline', 'strike'],
-                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                            [{ 'align': [] }],
-                            ['link', 'image', 'video'],
-                            ['clean']
-                        ],
-                        handlers: {
-                            image: imageHandler,
-                            video: videoHandler,
-                        }
+        if (!containerRef.current || quillRef.current) return;
+        const containerEl = containerRef.current;
+
+        const quill = new Quill(containerEl, {
+            theme: 'snow',
+            placeholder: placeholder || 'Type or drop content...',
+            modules: {
+                toolbar: {
+                    container: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        [{ 'align': [] }],
+                ['link', 'image', 'video']
+                    ],
+                    handlers: {
+                        image: imageHandler,
+                        video: videoHandler,
                     }
                 }
-            });
-
-            quillRef.current.on('text-change', () => {
-                isLocalChange.current = true;
-                const html = quillRef.current.root.innerHTML;
-                onChange(html === '<p><br></p>' ? '' : html);
-            });
-        }
-    }, [placeholder, onChange]);
-
-    useEffect(() => {
-        if (quillRef.current && value !== quillRef.current.root.innerHTML) {
-            if (!isLocalChange.current) {
-                quillRef.current.root.innerHTML = value || '';
             }
+        });
+        quillRef.current = quill;
+
+        quill.on('text-change', () => {
+            const html = quill.root.innerHTML;
+            lastEmitted.current = html;
+            onChange(html === '<p><br></p>' ? '' : html);
+        });
+
+        // Upload images dropped or pasted directly into the editor (instead of base64-embedding)
+        const editorEl = quill.root;
+        const onDrop = (e) => {
+            const files = Array.from(e.dataTransfer?.files || []).filter((f) => f.type.startsWith('image/'));
+            if (!files.length) return;
+            e.preventDefault();
+            const range = quill.getSelection() || { index: quill.getLength() };
+            files.forEach((file, i) => uploadImage(file, range.index + i));
+        };
+        const onPaste = (e) => {
+            const items = Array.from(e.clipboardData?.items || []);
+            const files = items
+                .filter((it) => it.type.startsWith('image/'))
+                .map((it) => it.getAsFile())
+                .filter(Boolean);
+            if (!files.length) return;
+            e.preventDefault();
+            const range = quill.getSelection() || { index: quill.getLength() };
+            files.forEach((file, i) => uploadImage(file, range.index + i));
+        };
+        editorEl.addEventListener('drop', onDrop);
+        editorEl.addEventListener('paste', onPaste);
+
+        return () => {
+            // Properly destroy the Quill instance and all its DOM (toolbar + editor)
+            lastEmitted.current = null;
+            quillRef.current = null;
+            const el = containerEl;
+            // Quill inserts the toolbar as a previous sibling — remove it too
+            const toolbar = el.previousElementSibling;
+            if (toolbar && toolbar.classList.contains('ql-toolbar')) toolbar.remove();
+            el.innerHTML = '';
+        };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Sync external `value` into the editor, but only when it actually differs
+    // from what the editor last emitted (avoids wiping local edits/uploads).
+    useEffect(() => {
+        if (!quillRef.current) return;
+        if (value !== lastEmitted.current) {
+            quillRef.current.root.innerHTML = value || '';
+            lastEmitted.current = value || '';
         }
-        isLocalChange.current = false;
     }, [value]);
 
     return (
@@ -409,7 +472,11 @@ const QuizSet = () => {
                                     <button type="button" onClick={() => setEditQuestionData(p => ({ ...p, questionType: 'valuewise' }))} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${questionType !== 'traitwise' ? 'bg-teal-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>Valuewise</button>
                                     <button type="button" onClick={() => setEditQuestionData(p => ({ ...p, questionType: 'traitwise' }))} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${questionType === 'traitwise' ? 'bg-violet-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>Traitwise</button>
                                 </div>
-                                <span className="text-[11px] text-slate-400 font-medium">Defaults to the section type ({sectionType || '—'}).</span>
+                                <span className="text-[11px] text-slate-400 font-medium">
+                                    {questionType === 'traitwise'
+                                        ? 'Traitwise: pick a career pair + trait per option (no correct answer).'
+                                        : 'Valuewise: mark one option as the correct answer.'}
+                                </span>
                             </div>
                         )}
 
@@ -637,7 +704,7 @@ const QuizSet = () => {
                                                                                     <tr key={q._id} className="hover:bg-slate-50/50">
                                                                                         <td className="p-4 align-top font-bold text-slate-400">{idx + 1}</td>
                                                                                         <td className="p-4 align-top">
-                                                                                            <div className="prose prose-sm text-slate-700 max-w-full truncate overflow-hidden line-clamp-3" dangerouslySetInnerHTML={{ __html: q.questionText }} />
+                                                                                            <div className="question-preview text-slate-700 max-w-full" dangerouslySetInnerHTML={{ __html: q.questionText }} />
                                                                                         </td>
                                                                                         <td className="p-4 align-top">
                                                                                             {isTraitwiseQ ? (
@@ -718,7 +785,7 @@ const QuizSet = () => {
                                     <option value="valuewise">Valuewise (pair traits)</option>
                                     <option value="traitwise">Traitwise (select traits)</option>
                                 </select>
-                                <p className="text-[10px] text-slate-400 font-medium mt-1">Traitwise questions let you pick traits directly; Valuewise uses the normal career-pair selection.</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-1">Valuewise questions use a single correct option; Traitwise questions use career-pair (trait) mapping instead of a correct answer.</p>
                             </div>
                         );
                     })()}

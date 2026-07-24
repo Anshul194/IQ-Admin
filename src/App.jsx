@@ -12,6 +12,9 @@ import AptitudeResults from './pages/AptitudeResults/AptitudeResults';
 import AptitudeSettings from './pages/AptitudeSettings/AptitudeSettings';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
+import StudentLogin from './pages/StudentLogin/StudentLogin';
+import StudentDashboard from './pages/StudentLogin/StudentDashboard';
+import Landing from './pages/Landing';
 
 const TrendyBackground = () => (
   <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
@@ -57,7 +60,7 @@ function App() {
     <Router>
       <Routes>
         <Route
-          path="/login"
+          path="/"
           element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />}
         />
         <Route
@@ -144,7 +147,9 @@ function App() {
             )
           }
         />
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/student/login" element={<StudentLogin />} />
+        <Route path="/student/dashboard" element={<StudentDashboard />} />
+        <Route path="/" element={<Landing />} />
       </Routes>
     </Router>
   );

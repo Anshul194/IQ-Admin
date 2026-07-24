@@ -6,6 +6,8 @@ import studentReducer from './slices/studentSlice';
 import quizReducer from './slices/quizSlice';
 import dashboardReducer from './slices/dashboardSlice';
 import aptitudeReducer from './slices/aptitudeSlice';
+import studentAuthReducer from './slices/studentAuthSlice';
+import otpReducer from './slices/otpSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +18,7 @@ export const store = configureStore({
     quiz: quizReducer,
     dashboard: dashboardReducer,
     aptitude: aptitudeReducer,
+    studentAuth: studentAuthReducer,
+    otp: otpReducer,
   },
 });
