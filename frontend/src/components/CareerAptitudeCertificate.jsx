@@ -161,44 +161,68 @@ export default function CareerAptitudeCertificate({
         This section evaluates your interests and personality traits across different career domains.
       </p>
 
-      <div style={{ display: "flex", gap: 20 }}>
-        {/* Table */}
-        <div style={{ flex: "0 0 46%" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
-            <thead>
-              <tr style={{ background: "#1a3a6b", color: "#fff" }}>
-                <th style={thStyle}>Career Interest Areas</th>
-                <th style={thStyle}>Aptitude in Numbers</th>
-                <th style={thStyle}>Aptitude in Percentage (%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {interest.rows.map((row, i) => (
-                <tr key={row.label} style={{ background: i % 2 === 0 ? "#f5f7fb" : "#ffffff" }}>
-                  <td style={tdLabelStyle}>
-                    {i + 1}. {row.label}
-                  </td>
-                  <td style={tdCenterStyle}>{row.score}</td>
-                  <td style={tdCenterStyle}>{row.pct.toFixed(2)}%</td>
-                </tr>
-              ))}
-              <tr style={{ background: "#fdf3e3", fontWeight: 700 }}>
-                <td style={tdLabelStyle}>GRAND TOTAL</td>
-                <td style={tdCenterStyle}>{interest.total}</td>
-                <td style={tdCenterStyle}>100.00%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Bar chart - fully dynamic widths from data */}
-        <div style={{ flex: 1 }}>
-          <div style={{ textAlign: "center", fontSize: 12, fontWeight: 700, color: "#1a3a6b", marginBottom: 6 }}>
-            Interest &amp; Personality Profile
-          </div>
-          <BarChart rows={interest.rows} maxPct={maxInterestPct} axisMax={20} />
-        </div>
-      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+        <thead>
+          <tr style={{ background: "#1a3a6b", color: "#fff" }}>
+            <th style={{ ...thStyle, width: "28%" }}>Career Interest Areas</th>
+            <th style={{ ...thStyle, width: "9%", textAlign: "center" }}>Aptitude in Numbers</th>
+            <th style={{ ...thStyle, width: "11%", textAlign: "center" }}>Aptitude in Percentage (%)</th>
+            <th style={{ width: "3%", border: "none" }}></th>
+            <th style={{ border: "none", textAlign: "center", color: "#1a3a6b", fontSize: 12, fontWeight: 700, paddingBottom: 6 }}>
+              Interest &amp; Personality Profile
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {interest.rows.map((row, i) => (
+            <tr key={row.label} style={{ background: i % 2 === 0 ? "#f5f7fb" : "#ffffff" }}>
+              <td style={{ ...tdLabelStyle, verticalAlign: "middle" }}>
+                {i + 1}. {row.label}
+              </td>
+              <td style={{ ...tdCenterStyle, verticalAlign: "middle" }}>{row.score}</td>
+              <td style={{ ...tdCenterStyle, verticalAlign: "middle" }}>{row.pct.toFixed(2)}%</td>
+              <td style={{ border: "none" }}></td>
+              <td style={{ border: "none", padding: "5px 0", verticalAlign: "middle" }}>
+                <div style={{ display: "flex", alignItems: "center", fontSize: 9.5 }}>
+                  <div style={{ width: 140, textAlign: "right", paddingRight: 6, color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {row.label}
+                  </div>
+                  <div style={{ flex: 1, background: "#f0f0f0", height: 12, position: "relative", borderRadius: 2 }}>
+                    <div
+                      style={{
+                        width: `${(row.pct / Math.max(20, Math.ceil(maxInterestPct / 5) * 5)) * 100}%`,
+                        background: row.color,
+                        height: "100%",
+                        borderRadius: 2,
+                        transition: "width 0.4s ease",
+                      }}
+                    />
+                  </div>
+                  <div style={{ width: 34, paddingLeft: 6, color: "#333" }}>{row.pct.toFixed(1)}</div>
+                </div>
+              </td>
+            </tr>
+          ))}
+          <tr style={{ fontWeight: 700 }}>
+            <td style={{ ...tdLabelStyle, background: "#fdf3e3", verticalAlign: "middle" }}>GRAND TOTAL</td>
+            <td style={{ ...tdCenterStyle, background: "#fdf3e3", verticalAlign: "middle" }}>{interest.total}</td>
+            <td style={{ ...tdCenterStyle, background: "#fdf3e3", verticalAlign: "middle" }}>100.00%</td>
+            <td style={{ border: "none" }}></td>
+            <td style={{ border: "none", padding: "5px 0", verticalAlign: "middle" }}>
+              <div style={{ display: "flex", marginLeft: 140, fontSize: 9, color: "#888", fontWeight: 400 }}>
+                {Array.from({ length: 5 }, (_, i) => {
+                  const scaleMax = Math.max(20, Math.ceil(maxInterestPct / 5) * 5);
+                  return (
+                    <div key={i} style={{ flex: 1, textAlign: i === 0 ? "left" : "right" }}>
+                      {Math.round((scaleMax / 4) * i)}
+                    </div>
+                  );
+                })}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <InsightBox
         text={generateInterestInsight(interest.rows)}

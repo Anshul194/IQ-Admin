@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import Quill from 'quill';
+import axios from 'axios';
 import 'quill/dist/quill.snow.css';
 import {
     ChevronDown, ChevronRight, Plus, Trash2, Edit2,
@@ -60,20 +61,19 @@ import api from '../../utils/api';
 // };
 
 // --- Enhanced Editor with Image, Video & More ---
+const LOADING_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZTJlOGYwIi8+PHRleHQgeD0iNDAiIHk9IjI1IiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+VXBsb2FkaW5nLi4uPC90ZXh0Pjwvc3ZnPg==";
+
 const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
     const containerRef = useRef(null);
     const quillRef = useRef(null);
     const lastEmitted = useRef(null);
-
-    const LOADING_PLACEHOLDER =
-        'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'40\'><rect width=\'80\' height=\'40\' fill=\'%23e2e8f0\'/><text x=\'40\' y=\'25\' font-size=\'12\' fill=\'%2394a3b8\' text-anchor=\'middle\' font-family=\'sans-serif\'>Uploading…</text></svg>';
 
     // Upload an image file to the server (POST /api/v1/upload) and insert the returned URL.
     const uploadImage = useCallback(async (file, index) => {
         const quill = quillRef.current;
         if (!quill || !file) return;
 
-        // Inline placeholder (no external dependency) shown while uploading
+        // Inline placeholder shown while uploading
         quill.insertEmbed(index, 'image', LOADING_PLACEHOLDER);
         quill.setSelection(index + 1);
 
@@ -81,12 +81,20 @@ const SimpleEditor = ({ value, onChange, placeholder, minHeight = "60px" }) => {
             const formData = new FormData();
             formData.append('file', file);
 
-            // Let the browser set the multipart boundary (don't force application/json,
-            // otherwise axios serializes FormData to "{}").
-            const res = await api.post('/upload', formData, {
-                headers: { 'Content-Type': undefined },
-            });
-            const imageUrl = res?.data?.url || res?.url;
+            // Determine API base URL dynamically
+            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+
+            // Use axios directly to bypass any default headers of custom api instance
+            const token = localStorage.getItem('token');
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await axios.post(`${apiBaseUrl}/upload`, formData, { headers });
+            
+            // Extract the real uploaded image URL from the standard response format
+            const imageUrl = response?.data?.data?.url || response?.data?.url;
 
             // Replace loading placeholder with the real uploaded image
             quill.deleteText(index, 1);

@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Compass, Play, FileText, Users, Award, ChevronRight } from 'lucide-react';
+import { Brain, Compass, Play, FileText, Users, Award, ChevronRight, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyResults } from '../store/slices/assessmentSlice';
-import { useEffect } from 'react';
+import api from '../utils/api';
 
 const Dashboard = ({ user }) => {
     const navigate = useNavigate();
@@ -14,8 +14,22 @@ const Dashboard = ({ user }) => {
     const { results, loading } = useSelector((state) => state.assessment);
     const isJunior = parseInt(user?.grade) <= 6;
 
+    const [examTypes, setExamTypes] = useState([]);
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
+    const [availableLanguages, setAvailableLanguages] = useState([]);
+
     useEffect(() => {
         dispatch(getMyResults());
+        const loadExamTypes = async () => {
+            try {
+                const response = await api.get('/exam-types');
+                const examTypesList = response?.data?.data || response?.data || response || [];
+                setExamTypes(examTypesList);
+            } catch (err) {
+                console.error("Failed to load exam types:", err);
+            }
+        };
+        loadExamTypes();
     }, [dispatch]);
 
     const cards = [
@@ -48,7 +62,26 @@ const Dashboard = ({ user }) => {
                         </p>
                         <div className="flex flex-wrap gap-4 pt-4">
                             <button
-                                onClick={() => navigate('/assessment')}
+                                onClick={() => {
+                                    const userGrade = user?.grade || '1';
+                                    const gradeNumber = userGrade.match(/\d+/)?.[0] || userGrade;
+
+                                    const matchingExamTypes = examTypes.filter(et => {
+                                        const etClassNum = et.className?.match(/\d+/)?.[0] || et.className;
+                                        return etClassNum === gradeNumber;
+                                    });
+
+                                    const languages = Array.from(new Set(matchingExamTypes.map(et => et.language).filter(Boolean)));
+
+                                    if (languages.length > 1) {
+                                        setAvailableLanguages(languages);
+                                        setShowLanguageModal(true);
+                                    } else if (languages.length === 1) {
+                                        navigate(`/assessment?lang=${languages[0]}`);
+                                    } else {
+                                        navigate(`/assessment?lang=${user?.language || 'English'}`);
+                                    }
+                                }}
                                 className="px-8 py-4 bg-violet-600 text-white rounded font-bold text-lg hover:bg-violet-700 transition-all flex items-center gap-2"
                             >
                                 Start Test Now <Play size={20} fill="currentColor" />
@@ -119,6 +152,52 @@ const Dashboard = ({ user }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Language Selection Modal */}
+            <AnimatePresence>
+                {showLanguageModal && (
+                    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
+                        >
+                            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-800">Select Exam Language</h3>
+                                    <p className="text-xs text-slate-500 font-medium mt-0.5">Please choose your preferred language for the test</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowLanguageModal(false)}
+                                    className="p-2 hover:bg-slate-200/60 rounded-xl text-slate-400 hover:text-slate-600 transition-all"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 gap-3">
+                                    {availableLanguages.map((lang) => (
+                                        <button
+                                            key={lang}
+                                            onClick={() => {
+                                                setShowLanguageModal(false);
+                                                navigate(`/assessment?lang=${lang}`);
+                                            }}
+                                            className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-violet-50 border border-slate-200 hover:border-violet-300 rounded-xl font-bold text-slate-800 hover:text-violet-700 transition-all group"
+                                        >
+                                            <span className="text-base font-black tracking-tight">{lang}</span>
+                                            <span className="w-8 h-8 rounded-full bg-white border border-slate-200 group-hover:border-violet-300 flex items-center justify-center text-slate-400 group-hover:text-violet-600 shadow-sm transition-all text-sm font-black">
+                                                →
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </MainLayout>
     );
 };

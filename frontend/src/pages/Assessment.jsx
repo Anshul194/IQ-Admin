@@ -8,7 +8,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { useDispatch, useSelector } from 'react-redux';
-import CareerAptitudeCertificate from '../components/CareerAptitudeCertificate';
 import { getQuizQuestions, submitAssessment, clearAssessment } from '../store/slices/assessmentSlice';
 import { downloadCertificate, downloadReport } from '../utils/api';
 const stripHtml = (html) => {
@@ -42,7 +41,9 @@ const Assessment = ({ user }) => {
     const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
     useEffect(() => {
-        dispatch(getQuizQuestions({ grade: user?.grade || '1', language: user?.language }));
+        const queryParams = new URLSearchParams(window.location.search);
+        const selectedLanguage = queryParams.get('lang') || user?.language;
+        dispatch(getQuizQuestions({ grade: user?.grade || '1', language: selectedLanguage }));
         setStartTime(Date.now());
         return () => dispatch(clearAssessment());
     }, [user, dispatch]);
@@ -411,22 +412,7 @@ const Assessment = ({ user }) => {
                                 )}
                             </div>
 
-                            {/* Certificate preview for Aptitude results */}
-                            {isAptitude && (
-                                <div className="space-y-3 pt-2">
-                                    <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Certificate Preview</h3>
-                                    <div className="overflow-x-auto border border-slate-200 rounded-xl flex justify-center p-3 bg-slate-100 scale-75 origin-top">
-                                        <CareerAptitudeCertificate
-                                            studentName={user?.fullName || user?.name || 'Student'}
-                                            className={user?.grade || 'N/A'}
-                                            completedAt={new Date()}
-                                            resultId={resultId}
-                                            interestAreas={lastResult.careerAssessment?.areas?.map(a => ({ label: a.name, score: a.score })) || []}
-                                            academicSubjects={lastResult.academicAssessment?.subjects?.map(s => ({ label: s.name, correct: s.correctAnswers, outOf: 10 })) || []}
-                                        />
-                                    </div>
-                                </div>
-                            )}
+
 
                             {areas.length > 0 && (
                                 <div className="space-y-3">
