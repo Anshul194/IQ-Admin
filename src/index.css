@@ -141,3 +141,27 @@ input::placeholder {
   font-style: normal !important;
   font-weight: 600 !important;
 }
+
+/* Constrain uploaded images so the editor preview shows them correctly */
+.ql-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  display: block;
+}
+
+/* Rendered question/preview HTML (e.g. list view) */
+.prose img,
+img.rich-content,
+.question-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+.question-preview {
+  max-height: 160px;
+  overflow-y: auto;
+}

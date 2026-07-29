@@ -42,7 +42,7 @@ const Assessment = ({ user }) => {
     const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
     useEffect(() => {
-        dispatch(getQuizQuestions(user?.grade || '1'));
+        dispatch(getQuizQuestions({ grade: user?.grade || '1', language: user?.language }));
         setStartTime(Date.now());
         return () => dispatch(clearAssessment());
     }, [user, dispatch]);

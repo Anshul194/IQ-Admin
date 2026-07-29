@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -25,9 +25,28 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response.data,
     (error) => {
-        const message = error.response?.data?.message || 'Something went wrong';
-        return Promise.reject(message);
+        const messageText = error.response?.data?.message || 'Something went wrong';
+        return Promise.reject(messageText);
     }
 );
+
+// OTP API Functions
+export const sendOtp = async (payload) => {
+    try {
+        const response = await api.post('/api/send-otp', payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const verifyOtp = async (otp, type, contact) => {
+    try {
+        const response = await api.post('/api/verify-otp', { otp, type, contact });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
 
 export default api;

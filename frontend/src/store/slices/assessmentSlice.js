@@ -3,9 +3,9 @@ import { fetchQuiz, submitExam, getResults, getCertificates, getAptitudeResults 
 
 export const getQuizQuestions = createAsyncThunk(
     'assessment/getQuizQuestions',
-    async (grade, { rejectWithValue }) => {
+    async ({ grade, language }, { rejectWithValue }) => {
         try {
-            const response = await fetchQuiz(grade);
+            const response = await fetchQuiz(grade, language);
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data?.message || 'Failed to fetch questions');

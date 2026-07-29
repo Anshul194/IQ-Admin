@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2, Globe, Sparkles } from 'lucide-react';
+import { Phone, Lock, Eye, EyeOff, ArrowRight, Sparkles, ChevronLeft } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../../store/slices/authSlice';
 
 const Login = () => {
@@ -10,10 +11,15 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const { loading, error } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const handleLogin = (e) => {
         e.preventDefault();
         dispatch(loginUser({ contactNumber, password }));
+    };
+
+    const handleBackToHome = () => {
+        navigate('/');
     };
 
     return (
@@ -79,6 +85,11 @@ const Login = () => {
                     transition={{ duration: 0.6 }}
                     className="w-full max-w-md space-y-12"
                 >
+                    <button onClick={handleBackToHome}
+                        className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors mb-6">
+                        <ChevronLeft size={14} /> Back to Home
+                    </button>
+
                     <div className="lg:hidden flex justify-center mb-8">
                         <img src="/logo-1.png" alt="Navodaya Wala" className="h-12 w-auto object-contain" />
                     </div>
@@ -160,16 +171,16 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div className="pt-10 flex flex-col items-center space-y-4">
-                        <div className="flex space-x-8">
-                            <div className="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
-                            <div className="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
-                            <div className="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                        <div className="pt-4 flex flex-col items-center space-y-4">
+                            <div className="flex space-x-8">
+                                <div className="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                                <div className="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                                <div className="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">
+                                System Security Level: <span className="text-slate-900">Alpha-7</span>
+                            </p>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">
-                            System Security Level: <span className="text-slate-900">Alpha-7</span>
-                        </p>
-                    </div>
                 </motion.div>
 
                 {/* Legal / Help link absolute */}

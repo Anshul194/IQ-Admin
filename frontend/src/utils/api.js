@@ -23,10 +23,34 @@ export const studentLogin = async (mobileNumber, dob) => {
     return response.data;
 };
 
-export const fetchQuiz = async (grade) => {
-    // This endpoint should return questions based on grade
-    // For now using a general fetch or specific query
-    const response = await api.get(`/question-masters?grade=${grade}`);
+export const checkMobile = async (mobileNumber) => {
+    const response = await api.post('/auth/student/check-mobile', { mobileNumber });
+    return response.data;
+};
+
+export const sendOtp = async (mobileNumber, type) => {
+    const response = await api.post('/auth/student/send-otp', { mobileNumber, type });
+    return response.data;
+};
+
+export const verifyOtp = async (mobileNumber, otp, type) => {
+    const response = await api.post('/auth/student/verify-otp', { mobileNumber, otp, type });
+    return response.data;
+};
+
+export const registerStudent = async (payload) => {
+    const response = await api.post('/auth/student/register', payload);
+    return response.data;
+};
+
+export const changeDob = async (mobileNumber, otp, newDob) => {
+    const response = await api.post('/auth/student/change-dob', { mobileNumber, otp, newDob });
+    return response.data;
+};
+
+export const fetchQuiz = async (grade, language) => {
+    const params = `grade=${grade}${language ? `&language=${language}` : ''}`;
+    const response = await api.get(`/question-masters?${params}`);
     return response.data;
 };
 

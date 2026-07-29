@@ -47,7 +47,7 @@ const LandingPage = () => {
 
                     <div className="flex items-center gap-4">
                         <Link to="/login" className="hidden sm:block text-sm font-black uppercase tracking-widest text-slate-600 hover:text-[#0845A5] transition-colors">Login</Link>
-                        <Link to="/login" className="px-7 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#0845A5] hover:shadow-xl hover:shadow-[#0845A5]/20 transition-all active:scale-95 shadow-lg shadow-slate-100">
+                        <Link to="/register" className="px-7 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#0845A5] hover:shadow-xl hover:shadow-[#0845A5]/20 transition-all active:scale-95 shadow-lg shadow-slate-100">
                             Register Now
                         </Link>
                         <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-slate-500 hover:text-slate-800 transition-colors">
